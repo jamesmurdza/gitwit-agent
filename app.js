@@ -1,10 +1,55 @@
+const { Configuration, OpenAIApi } = require('openai')
+const template = require('./prompt.js')
+require('dotenv').config();
+const fs = require('fs');
 const Docker = require('dockerode');
+const readline = require('readline');
 
-const repoName = "new-repo-5";
-const description = "ReactJS app with a countdown timer";
-const baseImage = "node:latest";
+function askQuestion(query) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    return new Promise(resolve => rl.question(query, ans => {
+        rl.close();
+        resolve(ans);
+    }))
+}
 
 (async function () {
+
+    console.log("Let's cook up a new project!")
+    const description = await askQuestion("What would you like to make? ");
+    const repoName = await askQuestion("Repository name: ");
+    const baseImage = "node:latest";
+
+    console.log("Calling on the great machine god...")
+
+    const configuration = new Configuration({
+        apiKey: process.env.OPENAI_API_KEY,
+    })
+    const openai = new OpenAIApi(configuration)
+
+    const prompt = template
+        .replace("{DESCRIPTION}", description)
+        .replace("{REPOSITORY_NAME}", repoName)
+        .replace("{BASE_IMAGE}", baseImage);
+
+    const completion = await openai
+        .createChatCompletion({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ],
+        })
+    fs.writeFile('build.sh', completion.data.choices[0].message.content.trim(), (err) => {
+        if (err) throw err;
+        console.log('Data written to file');
+    });
 
     // create a new docker client instance
     const docker = new Docker();
@@ -53,6 +98,11 @@ const baseImage = "node:latest";
             `REPO_DESCRIPTION=${description}`,
         ],
         Tty: true,
+    });
+
+    process.on('SIGINT', async function () {
+        console.log("Caught interrupt signal");
+        await container.stop({ force: true });
     });
 
     // start the container
