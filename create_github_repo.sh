@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /home/.env
+source /private/.env
 
 curl -H "Authorization: token $GITHUB_TOKEN" \
     -H "Content-Type: application/json" \
@@ -12,7 +12,7 @@ git config --global user.email $GIT_AUTHOR_EMAIL
 git config --global user.name $GIT_AUTHOR_NAME
 git config --global init.defaultBranch main
 
-source /home/build.sh
+source /app/build.sh
 
 echo "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com" >> ~/.git-credentials
 git config --global credential.helper store
