@@ -5,7 +5,7 @@ source /private/.env
 curl -H "Authorization: token $GITHUB_TOKEN" \
     -H "Content-Type: application/json" \
     -X POST \
-    -d "{\"name\": \"$REPO_NAME\", \"description\": \"$REPO_DESCRIPTION\"}" \
+    -d "{\"name\": \"$REPO_NAME\", \"description\": \"$REPO_DESCRIPTION\", \"private\": true}" \
     https://api.github.com/user/repos
 
 git config --global user.email $GIT_AUTHOR_EMAIL
