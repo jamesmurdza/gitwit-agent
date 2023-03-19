@@ -46,7 +46,18 @@ function askQuestion(query) {
                 },
             ],
         })
-    fs.writeFile('build.sh', completion.data.choices[0].message.content.trim(), (err) => {
+    console.log("Prayers were answered.")
+
+    // What a hack! But small corrections like this will necessary for a while.
+    let buildScript = completion.data.choices[0].message.content.trim();
+    buildScript = buildScript
+        .replaceAll(/^npx /mg, 'npx --yes ')
+        .replaceAll(/^echo /mg, 'echo -e ')
+        .replaceAll(/^git push .*$/mg, '')
+        .replaceAll(/^git commit -m "(.*)$/mg, 'git commit -m "👷🏼 $1')
+        .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
+
+    fs.writeFile('build.sh', buildScript, (err) => {
         if (err) throw err;
         console.log('Data written to file');
     });
