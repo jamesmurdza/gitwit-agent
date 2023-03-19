@@ -15,7 +15,8 @@ git config --global init.defaultBranch main
 mkdir $REPO_NAME
 cd $REPO_NAME
 
-source /app/build.sh
+source /app/build.sh > /app/build.log 2>&1
+
 # cd to the top-level directory of the git repo
 cd $(git rev-parse --show-toplevel)
 
@@ -23,7 +24,9 @@ mkdir _clonegpt
 cd _clonegpt
 cp /app/build.sh ./
 git add build.sh
-git commit -m "Added code generation script for inspection."
+cp /app/build.log ./
+git add build.log
+git commit -m "👷🏼 Finished code generation, adding logs"
 
 echo "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com" >> ~/.git-credentials
 git config --global credential.helper store
