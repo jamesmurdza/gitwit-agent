@@ -12,7 +12,16 @@ git config --global user.email $GIT_AUTHOR_EMAIL
 git config --global user.name $GIT_AUTHOR_NAME
 git config --global init.defaultBranch main
 
+mkdir $REPO_NAME
+cd $REPO_NAME
+
 source /app/build.sh
+
+mkdir _clonegpt
+cd _clonegpt
+cp /app/build.sh ./
+git add build.sh
+git commit -m "Added code generation script for inspection."
 
 echo "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com" >> ~/.git-credentials
 git config --global credential.helper store
