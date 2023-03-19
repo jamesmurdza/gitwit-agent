@@ -16,6 +16,8 @@ mkdir $REPO_NAME
 cd $REPO_NAME
 
 source /app/build.sh
+# cd to the top-level directory of the git repo
+cd $(git rev-parse --show-toplevel)
 
 mkdir _clonegpt
 cd _clonegpt
