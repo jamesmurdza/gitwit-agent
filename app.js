@@ -120,8 +120,12 @@ function askQuestion(query) {
     stream.on('end', async () => {
         console.log('Container has stopped running');
         // cleanup the container when it's done
-        await container.remove();
+        await container.remove()
         console.log('Container removed');
+        docker.getImage('clonegpt:latest').remove((err, data) => {
+            if (err) throw err;
+            console.log("Image removed");
+        });
     });
 
 })();
