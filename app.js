@@ -19,48 +19,53 @@ function askQuestion(query) {
 
 (async function () {
 
+    let offline = process.argv.includes('--offline');
+
     console.log("Let's cook up a new project!")
     const description = await askQuestion("What would you like to make? ");
     const repoName = await askQuestion("Repository name: ");
     const baseImage = "node:latest";
 
-    console.log("Calling on the great machine god...")
+    if (!offline) {
+        console.log("Calling on the great machine god...")
 
-    const configuration = new Configuration({
-        apiKey: process.env.OPENAI_API_KEY,
-    })
-    const openai = new OpenAIApi(configuration)
-
-    const prompt = template
-        .replace("{DESCRIPTION}", description)
-        .replace("{REPOSITORY_NAME}", repoName)
-        .replace("{BASE_IMAGE}", baseImage);
-
-    const completion = await openai
-        .createChatCompletion({
-            model: 'gpt-3.5-turbo',
-            messages: [
-                {
-                    role: 'user',
-                    content: prompt,
-                },
-            ],
+        const configuration = new Configuration({
+            apiKey: process.env.OPENAI_API_KEY,
         })
-    console.log("Prayers were answered.")
+        const openai = new OpenAIApi(configuration)
 
-    // What a hack! But small corrections like this will necessary for a while.
-    let buildScript = completion.data.choices[0].message.content.trim();
-    buildScript = buildScript
-        .replaceAll(/^npx /mg, 'npx --yes ')
-        .replaceAll(/^echo /mg, 'echo -e ')
-        .replaceAll(/^git push .*$/mg, '')
-        .replaceAll(/^git commit -m "(.*)$/mg, 'git commit -m "👷🏼 $1')
-        .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
+        const prompt = template
+            .replace("{DESCRIPTION}", description)
+            .replace("{REPOSITORY_NAME}", repoName)
+            .replace("{BASE_IMAGE}", baseImage);
 
-    fs.writeFile('build.sh', buildScript, (err) => {
-        if (err) throw err;
-        console.log('Data written to file');
-    });
+        const completion = await openai
+            .createChatCompletion({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt,
+                    },
+                ],
+            })
+        console.log("Prayers were answered.")
+
+        // What a hack! But small corrections like this will necessary for a while.
+        let buildScript = completion.data.choices[0].message.content.trim();
+        buildScript = buildScript
+            .replaceAll(/^npx /mg, 'npx --yes ')
+            .replaceAll(/^echo /mg, 'echo -e ')
+            .replaceAll(/^git push .*$/mg, '')
+            .replaceAll(/^git commit -m "(.*)$/mg, 'git commit -m "👷🏼 $1')
+            .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
+
+        fs.writeFile('build.sh', buildScript, (err) => {
+            if (err) throw err;
+            console.log('Data written to file');
+        });
+
+    }
 
     // create a new docker client instance
     const docker = new Docker();
