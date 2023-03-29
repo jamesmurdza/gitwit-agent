@@ -20,6 +20,7 @@ function askQuestion(query) {
 (async function () {
 
     let offline = process.argv.includes('--offline');
+    let dryRun = process.argv.includes('--dry-run');
 
     console.log("Let's cook up a new project!")
     const description = await askQuestion("What would you like to make? ");
@@ -122,26 +123,28 @@ function askQuestion(query) {
     });
 
     // start the container
-    await container.start();
+    if (!dryRun) {
+        await container.start();
 
-    // wait for the container to finish running
-    const stream = await container.logs({
-        follow: true,
-        stdout: true,
-        stderr: true
-    });
-
-    stream.on('data', chunk => console.log(chunk.toString()));
-
-    stream.on('end', async () => {
-        console.log('Container has stopped running');
-        // cleanup the container when it's done
-        await container.remove()
-        console.log('Container removed');
-        docker.getImage('clonegpt:latest').remove((err, data) => {
-            if (err) throw err;
-            console.log("Image removed");
+        // wait for the container to finish running
+        const stream = await container.logs({
+            follow: true,
+            stdout: true,
+            stderr: true
         });
-    });
+
+        stream.on('data', chunk => console.log(chunk.toString()));
+
+        stream.on('end', async () => {
+            console.log('Container has stopped running');
+            // cleanup the container when it's done
+            await container.remove()
+            console.log('Container removed');
+            docker.getImage('clonegpt:latest').remove((err, data) => {
+                if (err) throw err;
+                console.log("Image removed");
+            });
+        });
+    }
 
 })();
