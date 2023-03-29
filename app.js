@@ -4,6 +4,7 @@ require('dotenv').config();
 const fs = require('fs');
 const Docker = require('dockerode');
 const readline = require('readline');
+const { off } = require('process');
 
 function askQuestion(query) {
     const rl = readline.createInterface({
@@ -19,15 +20,25 @@ function askQuestion(query) {
 
 (async function () {
 
-    let offline = process.argv.includes('--offline');
-    let dryRun = process.argv.includes('--dry-run');
+    let offline = process.argv.includes('--again');
+    let dryRun = process.argv.includes('--debug');
 
     console.log("Let's cook up a new project!")
-    const description = await askQuestion("What would you like to make? ");
-    const repoName = await askQuestion("Repository name: ");
     const baseImage = "node:latest";
 
+    let repoDescription;
+    let repoName;
+
+    if (offline) {
+        const data = await fs.promises.readFile("build.json");
+        const jsonData = JSON.parse(data)
+        repoDescription = jsonData.description;
+        repoName = jsonData.name;
+    }
     if (!offline) {
+        repoDescription = await askQuestion("What would you like to make? ");
+        repoName = await askQuestion("Repository name: ");
+
         console.log("Calling on the great machine god...")
 
         const configuration = new Configuration({
@@ -36,7 +47,7 @@ function askQuestion(query) {
         const openai = new OpenAIApi(configuration)
 
         const prompt = template
-            .replace("{DESCRIPTION}", description)
+            .replace("{DESCRIPTION}", repoDescription)
             .replace("{REPOSITORY_NAME}", repoName)
             .replace("{BASE_IMAGE}", baseImage);
 
@@ -63,7 +74,7 @@ function askQuestion(query) {
 
         fs.writeFile('build.sh', buildScript, (err) => {
             if (err) throw err;
-            console.log('Data written to file');
+            console.log('Wrote build.sh');
         });
 
     }
@@ -76,7 +87,7 @@ function askQuestion(query) {
     // build a new image from the Dockerfile
     const buildStream = await docker.buildImage({
         context: '.',
-        src: ['Dockerfile', 'create_github_repo.sh', 'build.sh', '.env'],
+        src: ['Dockerfile', 'create_github_repo.sh', 'build.sh'],
     }, {
         t: 'clonegpt:latest', // specify the tag for the image
         buildargs: {
@@ -107,13 +118,19 @@ function askQuestion(query) {
         });
     });
 
+    const environment = [
+        `REPO_NAME=${repoName}`,
+        `REPO_DESCRIPTION=${repoDescription}`,
+        `GIT_AUTHOR_EMAIL=${process.env.GIT_AUTHOR_EMAIL}`,
+        `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
+        `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
+        `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
+    ];
+
     // create a new container from the image
     const container = await docker.createContainer({
         Image: 'clonegpt:latest', // specify the image to use
-        Env: [
-            `REPO_NAME=${repoName}`,
-            `REPO_DESCRIPTION=${description}`,
-        ],
+        Env: environment,
         Tty: true,
     });
 
@@ -121,6 +138,21 @@ function askQuestion(query) {
         console.log("Caught interrupt signal");
         await container.stop({ force: true });
     });
+
+    fs.writeFile('build.env', environment.join("\n"), (err) => {
+        if (err) throw err;
+        console.log('Wrote build.env.');
+    });
+
+    fs.writeFile('build.json', JSON.stringify({ name: repoName, description: repoDescription }), (err) => {
+        if (err) throw err;
+        console.log('Data written to file');
+    });
+
+    if (dryRun) {
+        console.log("Dry run, not starting container");
+        console.log("docker run --rm -it --env-file build.env --entrypoint bash clonegpt")
+    }
 
     // start the container
     if (!dryRun) {

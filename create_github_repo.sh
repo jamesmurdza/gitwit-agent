@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source /private/.env
-
 curl -H "Authorization: token $GITHUB_TOKEN" \
     -H "Content-Type: application/json" \
     -X POST \
