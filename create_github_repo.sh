@@ -19,11 +19,10 @@ source /app/build.sh > /app/build.log 2>&1
 cd $(git rev-parse --show-toplevel)
 
 mkdir _gitwit
-cd _gitwit
-cp /app/build.sh ./
-git add build.sh
-cp /app/build.log ./
-git add build.log
+cp /app/build.sh ./_gitwit/build.sh
+git add -f ./_gitwit/build.sh
+cp /app/build.log ./_gitwit/build.log
+git add -f ./_gitwit/build.log
 git commit -m "Finished code generation, adding logs"
 
 echo "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com" >> ~/.git-credentials
