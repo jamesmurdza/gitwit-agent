@@ -25,6 +25,7 @@ function askQuestion(query) {
 
     console.log("Let's cook up a new project!")
     const baseImage = "node:latest";
+    const gptModel = "gpt-3.5-turbo";
 
     let repoDescription;
     let repoName;
@@ -53,7 +54,7 @@ function askQuestion(query) {
 
         const completion = await openai
             .createChatCompletion({
-                model: 'gpt-3.5-turbo',
+                model: gptModel,
                 messages: [
                     {
                         role: 'user',
@@ -131,6 +132,7 @@ function askQuestion(query) {
         `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
         `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
         `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
+        `GITWIT_VERSION=${process.env.npm_package_version}`
     ];
 
     // create a new container from the image
@@ -150,7 +152,13 @@ function askQuestion(query) {
         console.log('Wrote build.env.');
     });
 
-    fs.writeFile('./build/build.json', JSON.stringify({ name: repoName, description: repoDescription }), (err) => {
+    const projectInfo = JSON.stringify({
+        name: repoName,
+        description: repoDescription,
+        generatorVersion: process.env.npm_package_version,
+        gptModel: gptModel
+    });
+    fs.writeFile('./build/build.json', projectInfo), (err) => {
         if (err) throw err;
         console.log('Data written to file');
     });
