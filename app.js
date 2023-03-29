@@ -74,6 +74,7 @@ function askQuestion(query) {
             .replaceAll(/^npx /mg, 'npx --yes ')
             .replaceAll(/^echo /mg, 'echo -e ')
             .replaceAll(/^git push .*$/mg, '')
+            .replaceAll(/^git remote .*$/mg, '')
             .replaceAll(/^git commit -m "(.*)$/mg, 'git commit -m "👷🏼 $1')
             .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
 
