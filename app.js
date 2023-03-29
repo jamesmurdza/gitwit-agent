@@ -1,10 +1,10 @@
+const fs = require('fs');
+const readline = require('readline');
 const { Configuration, OpenAIApi } = require('openai')
+const Docker = require('dockerode');
+
 const template = require('./prompt.js')
 require('dotenv').config();
-const fs = require('fs');
-const Docker = require('dockerode');
-const readline = require('readline');
-const { off } = require('process');
 
 function askQuestion(query) {
     const rl = readline.createInterface({
@@ -18,20 +18,23 @@ function askQuestion(query) {
     }))
 }
 
+const baseImage = "node:latest";
+const gptModel = "gpt-3.5-turbo";
+const buildDirectory = "./build/";
+const dockerTag = "gitwit:latest";
+
 (async function () {
 
     let offline = process.argv.includes('--again');
     let dryRun = process.argv.includes('--debug');
 
     console.log("Let's cook up a new project!")
-    const baseImage = "node:latest";
-    const gptModel = "gpt-3.5-turbo";
 
     let repoDescription;
     let repoName;
 
     if (offline) {
-        const data = await fs.promises.readFile("./build/build.json");
+        const data = await fs.promises.readFile(buildDirectory + "build.json");
         const jsonData = JSON.parse(data)
         repoDescription = jsonData.description;
         repoName = jsonData.name;
@@ -64,9 +67,8 @@ function askQuestion(query) {
             })
         console.log("Prayers were answered.")
 
-        const folderPath = './build';
-        if (!fs.existsSync(folderPath)) {
-            fs.mkdirSync(folderPath);
+        if (!fs.existsSync(buildDirectory)) {
+            fs.mkdirSync(buildDirectory);
         }
 
         // What a hack! But small corrections like this will necessary for a while.
@@ -94,15 +96,13 @@ function askQuestion(query) {
     // build a new image from the Dockerfile
     const buildStream = await docker.buildImage({
         context: '.',
-        src: ['Dockerfile', 'create_github_repo.sh', './build/build.sh'],
+        src: ['Dockerfile', 'create_github_repo.sh', buildDirectory + '/build.sh'],
     }, {
-        t: 'clonegpt:latest', // specify the tag for the image
+        t: dockerTag, // specify the tag for the image
         buildargs: {
             BASE_IMAGE: baseImage,
         }
     });
-
-    let imageId = '';
 
     await new Promise((resolve, reject) => {
         buildStream.on('data', (data) => {
@@ -137,7 +137,7 @@ function askQuestion(query) {
 
     // create a new container from the image
     const container = await docker.createContainer({
-        Image: 'gitwit:latest', // specify the image to use
+        Image: dockerTag, // specify the image to use
         Env: environment,
         Tty: true,
     });
@@ -147,7 +147,7 @@ function askQuestion(query) {
         await container.stop({ force: true });
     });
 
-    fs.writeFile('./build/build.env', environment.join("\n"), (err) => {
+    fs.writeFile(buildDirectory + '/build.env', environment.join("\n"), (err) => {
         if (err) throw err;
         console.log('Wrote build.env.');
     });
@@ -158,14 +158,14 @@ function askQuestion(query) {
         generatorVersion: process.env.npm_package_version,
         gptModel: gptModel
     });
-    fs.writeFile('./build/build.json', projectInfo), (err) => {
+    fs.writeFile(buildDirectory + '/build.json', projectInfo, (err) => {
         if (err) throw err;
         console.log('Data written to file');
     });
 
     if (dryRun) {
         console.log("Dry run, not starting container");
-        console.log("docker run --rm -it --env-file ./build/build.env --entrypoint bash gitwit")
+        console.log(`docker run --rm -it --env-file ${buildDirectory} build.env --entrypoint bash ${dockerTag}`)
     }
 
     // start the container
@@ -186,7 +186,7 @@ function askQuestion(query) {
             // cleanup the container when it's done
             await container.remove()
             console.log('Container removed');
-            docker.getImage('gitwit:latest').remove((err, data) => {
+            docker.getImage(dockerTag).remove((err, data) => {
                 if (err) throw err;
                 console.log("Image removed");
             });
