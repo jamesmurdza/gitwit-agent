@@ -6,6 +6,17 @@ const Docker = require('dockerode');
 const template = require('./prompt.js')
 require('dotenv').config();
 
+const baseImage = "node:latest";
+const gptModel = "gpt-3.5-turbo";
+const buildDirectory = "./build/";
+const dockerTag = "gitwit:latest";
+
+const buildScriptPath = buildDirectory + "build.sh";
+const environmentFilePath = buildDirectory + "build.env";
+const projectFilePath = buildDirectory + "build.json";
+
+// User input:
+
 function askQuestion(query) {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -18,87 +29,53 @@ function askQuestion(query) {
     }))
 }
 
-const baseImage = "node:latest";
-const gptModel = "gpt-3.5-turbo";
-const buildDirectory = "./build/";
-const dockerTag = "gitwit:latest";
+// Reading and writing files:
 
-(async function () {
-
-    let offline = process.argv.includes('--again');
-    let dryRun = process.argv.includes('--debug');
-
-    console.log("Let's cook up a new project!")
-
-    let repoDescription;
-    let repoName;
-
-    if (offline) {
-        const data = await fs.promises.readFile(buildDirectory + "build.json");
-        const jsonData = JSON.parse(data)
-        repoDescription = jsonData.description;
-        repoName = jsonData.name;
+function createBuildDirectory() {
+    if (!fs.existsSync(buildDirectory)) {
+        fs.mkdirSync(buildDirectory);
     }
-    if (!offline) {
-        repoDescription = await askQuestion("What would you like to make? ");
-        repoName = await askQuestion("Repository name: ");
+}
 
-        console.log("Calling on the great machine god...")
+async function writeFile(path, contents) {
+    await fs.promises.writeFile(path, contents);
+    console.log(`Wrote ${path}.`);
+}
 
-        const configuration = new Configuration({
-            apiKey: process.env.OPENAI_API_KEY,
-        })
-        const openai = new OpenAIApi(configuration)
+async function readProjectFile() {
+    const data = await fs.promises.readFile(buildDirectory + "build.json");
+    return JSON.parse(data)
+}
 
-        const prompt = template
-            .replace("{DESCRIPTION}", repoDescription)
-            .replace("{REPOSITORY_NAME}", repoName)
-            .replace("{BASE_IMAGE}", baseImage);
+// OpenAI API:
 
-        const completion = await openai
-            .createChatCompletion({
-                model: gptModel,
-                messages: [
-                    {
-                        role: 'user',
-                        content: prompt,
-                    },
-                ],
-            })
-        console.log("Prayers were answered.")
+async function simpleOpenAIRequest(prompt) {
 
-        if (!fs.existsSync(buildDirectory)) {
-            fs.mkdirSync(buildDirectory);
-        }
+    const configuration = new Configuration({
+        apiKey: process.env.OPENAI_API_KEY,
+    })
+    const openai = new OpenAIApi(configuration)
 
-        // What a hack! But small corrections like this will necessary for a while.
-        let buildScript = completion.data.choices[0].message.content.trim();
-        buildScript = buildScript
-            .replaceAll(/^npx /mg, 'npx --yes ')
-            .replaceAll(/^echo /mg, 'echo -e ')
-            .replaceAll(/^git push .*$/mg, '')
-            .replaceAll(/^git remote .*$/mg, '')
-            .replaceAll(/^git commit -m "(.*)$/mg, 'git commit -m "👷🏼 $1')
-            .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
+    let completion = await openai.createChatCompletion({
+        model: gptModel,
+        messages: [
+            {
+                role: 'user',
+                content: prompt,
+            },
+        ],
+    })
+    return completion.data.choices[0].message.content;
+}
 
-        fs.writeFile('build/build.sh', buildScript, (err) => {
-            if (err) throw err;
-            console.log('Wrote build.sh');
-        });
+// Docker:
 
-    }
-
-    // create a new docker client instance
-    const docker = new Docker();
-
-    console.log("Bulding Docker image...");
-
-    // build a new image from the Dockerfile
+async function buildImage(docker, tag) {
     const buildStream = await docker.buildImage({
         context: '.',
-        src: ['Dockerfile', 'create_github_repo.sh', buildDirectory + '/build.sh'],
+        src: ['Dockerfile', 'create_github_repo.sh', buildScriptPath],
     }, {
-        t: dockerTag, // specify the tag for the image
+        t: tag, // specify the tag for the image
         buildargs: {
             BASE_IMAGE: baseImage,
         }
@@ -120,77 +97,151 @@ const dockerTag = "gitwit:latest";
         });
 
         buildStream.on('end', () => {
-            console.log('Build complete!');
             resolve();
         });
     });
+}
+
+async function createContainer(docker, tag, environment) {
+    // create a new container from the image
+    return await docker.createContainer({
+        Image: tag, // specify the image to use
+        Env: environment,
+        Tty: true,
+    });
+}
+
+async function startContainer(container) {
+    process.on('SIGINT', async function () {
+        console.log("Caught interrupt signal");
+        await container.stop({ force: true });
+    });
+    await container.start();
+    const stream = await container.logs({
+        follow: true,
+        stdout: true,
+        stderr: true
+    });
+    stream.on('data', chunk => console.log(chunk.toString()));
+    return stream;
+}
+
+async function waitForStreamEnd(stream) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            stream.on('end', async () => {
+                resolve();
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+async function removeDockerImage(docker, tag) {
+    try {
+        const image = await docker.getImage(tag).inspect();
+        await docker.getImage(tag).remove();
+        return image;
+    } catch (err) {
+        throw err;
+    }
+}
+// Post-processing:
+
+function applyCorrections(buildScript) {
+    // What a hack! But small corrections like this will necessary for a while.
+    return buildScript.replaceAll(/^npx /mg, 'npx --yes ')
+        .replaceAll(/^echo /mg, 'echo -e ')
+        .replaceAll(/^git push .*$/mg, '')
+        .replaceAll(/^git remote .*$/mg, '')
+        .replaceAll(/^git commit -m "(.*)$/mg, 'git commit -m "👷🏼 $1')
+        .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
+}
+
+// Main script:
+
+(async function () {
+
+    let offline = process.argv.includes('--offline');
+    let again = process.argv.includes('--again');
+    let dryRun = process.argv.includes('--debug');
+
+    let description;
+    let name;
+
+    createBuildDirectory();
+
+    if (offline || again) {
+        ({ description, name } = await readProjectFile());
+    }
+
+    if (!description || !name) {
+        console.log("Let's cook up a new project!")
+        description = await askQuestion("What would you like to make? ");
+        name = await askQuestion("Repository name: ");
+    }
 
     const environment = [
-        `REPO_NAME=${repoName}`,
-        `REPO_DESCRIPTION=${repoDescription}`,
+        `REPO_NAME=${name}`,
+        `REPO_DESCRIPTION=${description}`,
         `GIT_AUTHOR_EMAIL=${process.env.GIT_AUTHOR_EMAIL}`,
         `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
         `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
         `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
         `GITWIT_VERSION=${process.env.npm_package_version}`
     ];
+    await writeFile(environmentFilePath, environment.join("\n"));
 
-    // create a new container from the image
-    const container = await docker.createContainer({
-        Image: dockerTag, // specify the image to use
-        Env: environment,
-        Tty: true,
-    });
-
-    process.on('SIGINT', async function () {
-        console.log("Caught interrupt signal");
-        await container.stop({ force: true });
-    });
-
-    fs.writeFile(buildDirectory + '/build.env', environment.join("\n"), (err) => {
-        if (err) throw err;
-        console.log('Wrote build.env.');
-    });
-
-    const projectInfo = JSON.stringify({
-        name: repoName,
-        description: repoDescription,
+    const projectInfo = {
+        name: name,
+        description: description,
         generatorVersion: process.env.npm_package_version,
         gptModel: gptModel
-    });
-    fs.writeFile(buildDirectory + '/build.json', projectInfo, (err) => {
-        if (err) throw err;
-        console.log('Data written to file');
-    });
+    };
+    await writeFile(projectFilePath, JSON.stringify(projectInfo))
 
-    if (dryRun) {
-        console.log("Dry run, not starting container");
-        console.log(`docker run --rm -it --env-file ${buildDirectory} build.env --entrypoint bash ${dockerTag}`)
+    if (!offline) {
+        const prompt = template
+            .replace("{DESCRIPTION}", description)
+            .replace("{REPOSITORY_NAME}", name)
+            .replace("{BASE_IMAGE}", baseImage);
+
+        console.log("Calling on the great machine god...")
+        let buildScript = await simpleOpenAIRequest(prompt)
+        console.log("Prayers were answered.")
+
+        buildScript = applyCorrections(buildScript.trim());
+        await writeFile(buildScriptPath, buildScript)
     }
 
-    // start the container
-    if (!dryRun) {
-        await container.start();
+    console.log("Bulding Docker image...");
 
-        // wait for the container to finish running
-        const stream = await container.logs({
-            follow: true,
-            stdout: true,
-            stderr: true
-        });
+    const docker = new Docker();
+    await buildImage(docker, dockerTag);
+    console.log('Build complete!');
 
-        stream.on('data', chunk => console.log(chunk.toString()));
+    const container = await createContainer(docker, dockerTag, environment);
 
-        stream.on('end', async () => {
-            console.log('Container has stopped running');
-            // cleanup the container when it's done
-            await container.remove()
-            console.log('Container removed');
-            docker.getImage(dockerTag).remove((err, data) => {
-                if (err) throw err;
-                console.log("Image removed");
-            });
-        });
+    if (dryRun) {
+
+        console.log("Dry run, not starting container. To debug, run:");
+        console.log("-----")
+        console.log(`docker run --rm -it --env-file ${buildDirectory}build.env --entrypoint bash ${dockerTag}`)
+        console.log(`source /app/create_github_repo.sh`)
+        console.log("-----")
+
+    } else {
+
+        const stream = await startContainer(container);
+        await waitForStreamEnd(stream);
+        console.log('Container has stopped running.');
+
+        await container.remove()
+        console.log('Container removed.');
+
+        await removeDockerImage(docker, dockerTag);
+        console.log("Image removed");
     }
 
 })();
