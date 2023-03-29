@@ -137,7 +137,7 @@ function askQuestion(query) {
 
     // create a new container from the image
     const container = await docker.createContainer({
-        Image: 'clonegpt:latest', // specify the image to use
+        Image: 'gitwit:latest', // specify the image to use
         Env: environment,
         Tty: true,
     });
