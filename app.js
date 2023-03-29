@@ -1,4 +1,6 @@
 const fs = require('fs');
+const tar = require('tar');
+const path = require('path');
 const readline = require('readline');
 const { Configuration, OpenAIApi } = require('openai')
 const Docker = require('dockerode');
@@ -9,7 +11,7 @@ require('dotenv').config();
 const baseImage = "node:latest";
 const gptModel = "gpt-3.5-turbo";
 const buildDirectory = "./build/";
-const dockerTag = "gitwit:latest";
+const containerHome = "/app/";
 
 const buildScriptPath = buildDirectory + "build.sh";
 const environmentFilePath = buildDirectory + "build.env";
@@ -70,44 +72,14 @@ async function simpleOpenAIRequest(prompt) {
 
 // Docker:
 
-async function buildImage(docker, tag) {
-    const buildStream = await docker.buildImage({
-        context: '.',
-        src: ['Dockerfile', 'create_github_repo.sh', buildScriptPath],
-    }, {
-        t: tag, // specify the tag for the image
-        buildargs: {
-            BASE_IMAGE: baseImage,
-        }
-    });
-
-    await new Promise((resolve, reject) => {
-        buildStream.on('data', (data) => {
-            const stream = data.toString().trim().split("\r\n");
-            stream.forEach(element => {
-                const parsed = JSON.parse(element);
-                if (parsed.stream) {
-                    console.log(parsed.stream)
-                }
-                else if (parsed.error) {
-                    console.log(parsed.error)
-                    reject(parsed.error);
-                }
-            });
-        });
-
-        buildStream.on('end', () => {
-            resolve();
-        });
-    });
-}
-
 async function createContainer(docker, tag, environment) {
     // create a new container from the image
     return await docker.createContainer({
         Image: tag, // specify the image to use
         Env: environment,
         Tty: true,
+        Cmd: ['/bin/sh'],
+        OpenStdin: true,
     });
 }
 
@@ -138,14 +110,23 @@ async function waitForStreamEnd(stream) {
     });
 }
 
-async function removeDockerImage(docker, tag) {
-    try {
-        const image = await docker.getImage(tag).inspect();
-        await docker.getImage(tag).remove();
-        return image;
-    } catch (err) {
-        throw err;
-    }
+async function runCommandInContainer(container, command) {
+    const exec = await container.exec({
+        Cmd: command,
+        AttachStdout: true,
+        AttachStderr: true,
+    });
+    const stream = await exec.start({ hijack: true, stdin: true });
+    stream.on('data', (data) => {
+        console.log(`Command output: ${data}`);
+    });
+    await waitForStreamEnd(stream);
+}
+
+async function copyFileToContainer(container, localFilePath, containerFilePath) {
+    const baseDir = path.dirname(localFilePath);
+    const archive = tar.create({ gzip: false, portable: true, cwd: baseDir }, [path.basename(localFilePath)]);
+    await container.putArchive(archive, { path: containerFilePath });
 }
 // Post-processing:
 
@@ -215,16 +196,14 @@ function applyCorrections(buildScript) {
         await writeFile(buildScriptPath, buildScript)
     }
 
-    console.log("Bulding Docker image...");
-
     const docker = new Docker();
-    await buildImage(docker, dockerTag);
-    console.log('Build complete!');
 
-    const container = await createContainer(docker, dockerTag, environment);
+    const container = await createContainer(docker, baseImage, environment);
+    console.log(`Container ${container.id} created.`);
 
     if (dryRun) {
 
+        // This is how we can debug the build script interactively.
         console.log("Dry run, not starting container. To debug, run:");
         console.log("-----")
         console.log(`docker run --rm -it --env-file ${buildDirectory}build.env --entrypoint bash ${dockerTag}`)
@@ -233,15 +212,20 @@ function applyCorrections(buildScript) {
 
     } else {
 
-        const stream = await startContainer(container);
-        await waitForStreamEnd(stream);
-        console.log('Container has stopped running.');
+        await startContainer(container);
+        console.log(`Container ${container.id} started.`);
+
+        // Run the build scripts in the container.
+        await runCommandInContainer(container, ["mkdir", containerHome])
+        await copyFileToContainer(container, buildScriptPath, containerHome)
+        await copyFileToContainer(container, "./create_github_repo.sh", containerHome)
+        await runCommandInContainer(container, ["bash", containerHome + "create_github_repo.sh"])
+
+        await container.stop();
+        console.log(`Container ${container.id} stopped.`);
 
         await container.remove()
-        console.log('Container removed.');
-
-        await removeDockerImage(docker, dockerTag);
-        console.log("Image removed");
+        console.log(`Container ${container.id} removed.`);
     }
 
 })();
