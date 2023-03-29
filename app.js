@@ -156,7 +156,7 @@ function askQuestion(query) {
 
     if (dryRun) {
         console.log("Dry run, not starting container");
-        console.log("docker run --rm -it --env-file ./build/build.env --entrypoint bash clonegpt")
+        console.log("docker run --rm -it --env-file ./build/build.env --entrypoint bash gitwit")
     }
 
     // start the container
@@ -177,7 +177,7 @@ function askQuestion(query) {
             // cleanup the container when it's done
             await container.remove()
             console.log('Container removed');
-            docker.getImage('clonegpt:latest').remove((err, data) => {
+            docker.getImage('gitwit:latest').remove((err, data) => {
                 if (err) throw err;
                 console.log("Image removed");
             });
