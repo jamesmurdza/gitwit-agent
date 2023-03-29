@@ -30,7 +30,7 @@ function askQuestion(query) {
     let repoName;
 
     if (offline) {
-        const data = await fs.promises.readFile("build.json");
+        const data = await fs.promises.readFile("./build/build.json");
         const jsonData = JSON.parse(data)
         repoDescription = jsonData.description;
         repoName = jsonData.name;
@@ -63,6 +63,11 @@ function askQuestion(query) {
             })
         console.log("Prayers were answered.")
 
+        const folderPath = './build';
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath);
+        }
+
         // What a hack! But small corrections like this will necessary for a while.
         let buildScript = completion.data.choices[0].message.content.trim();
         buildScript = buildScript
@@ -72,7 +77,7 @@ function askQuestion(query) {
             .replaceAll(/^git commit -m "(.*)$/mg, 'git commit -m "👷🏼 $1')
             .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
 
-        fs.writeFile('build.sh', buildScript, (err) => {
+        fs.writeFile('build/build.sh', buildScript, (err) => {
             if (err) throw err;
             console.log('Wrote build.sh');
         });
@@ -87,7 +92,7 @@ function askQuestion(query) {
     // build a new image from the Dockerfile
     const buildStream = await docker.buildImage({
         context: '.',
-        src: ['Dockerfile', 'create_github_repo.sh', 'build.sh'],
+        src: ['Dockerfile', 'create_github_repo.sh', './build/build.sh'],
     }, {
         t: 'clonegpt:latest', // specify the tag for the image
         buildargs: {
@@ -139,19 +144,19 @@ function askQuestion(query) {
         await container.stop({ force: true });
     });
 
-    fs.writeFile('build.env', environment.join("\n"), (err) => {
+    fs.writeFile('./build/build.env', environment.join("\n"), (err) => {
         if (err) throw err;
         console.log('Wrote build.env.');
     });
 
-    fs.writeFile('build.json', JSON.stringify({ name: repoName, description: repoDescription }), (err) => {
+    fs.writeFile('./build/build.json', JSON.stringify({ name: repoName, description: repoDescription }), (err) => {
         if (err) throw err;
         console.log('Data written to file');
     });
 
     if (dryRun) {
         console.log("Dry run, not starting container");
-        console.log("docker run --rm -it --env-file build.env --entrypoint bash clonegpt")
+        console.log("docker run --rm -it --env-file ./build/build.env --entrypoint bash clonegpt")
     }
 
     // start the container
