@@ -50,7 +50,7 @@ async function writeFile(path, contents) {
 }
 
 async function readProjectFile() {
-    const data = await fs.promises.readFile(buildDirectory + "build.json");
+    const data = await fs.promises.readFile(projectFilePath);
     return JSON.parse(data)
 }
 
