@@ -8,6 +8,8 @@ const { simpleOpenAIRequest } = require('./openai.js');
 const { applyCorrections } = require('./corrections.js');
 const template = require('./prompt.js')
 
+const { createGitHubRepo } = require('./github.js');
+
 require('dotenv').config();
 
 const baseImage = "node:latest";
@@ -131,8 +133,13 @@ async function readProjectFile() {
 
     } else {
 
-        // Start the container, run the build scripts, and remove the container.
+        // Create the GitHub repository.
+        const result = await createGitHubRepo(process.env.GITHUB_TOKEN, name, description);
+        if (result.html_url) {
+            console.log(`Created repository: ${result.html_url}`);
+        }
 
+        // Start the container.
         await startContainer(container);
         console.log(`Container ${container.id} started.`);
 
@@ -142,9 +149,9 @@ async function readProjectFile() {
         await copyFileToContainer(container, "./create_github_repo.sh", containerHome)
         await runCommandInContainer(container, ["bash", containerHome + "create_github_repo.sh"])
 
+        // Stop and remove the container.
         await container.stop();
         console.log(`Container ${container.id} stopped.`);
-
         await container.remove()
         console.log(`Container ${container.id} removed.`);
     }
