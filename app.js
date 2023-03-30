@@ -58,9 +58,10 @@ async function readProjectFile() {
 
 (async function () {
 
-    let again = process.argv.includes('--again'); // Load metadata from a previous run.
-    let offline = process.argv.includes('--offline'); // Skip OpenAI requests.
-    let dryRun = process.argv.includes('--debug'); // Skip running the container.
+    let again = process.argv.includes('--again'); // Use user input from the last run.
+    let offline = process.argv.includes('--offline'); // Use build script from the last run.
+
+    let dryRun = process.argv.includes('--debug'); // Leave the container running to debug.
 
     let description;
     let name;
@@ -122,31 +123,36 @@ async function readProjectFile() {
     const container = await createContainer(docker, baseImage, environment);
     console.log(`Container ${container.id} created.`);
 
+    // Create the GitHub repository.
+    const result = await createGitHubRepo(process.env.GITHUB_TOKEN, name, description);
+    if (result.html_url) {
+        console.log(`Created repository: ${result.html_url}`);
+    }
+
+    // Start the container.
+    await startContainer(container);
+    console.log(`Container ${container.id} started.`);
+
+    // Move the build scripts to the container.
+    await runCommandInContainer(container, ["mkdir", containerHome])
+    await copyFileToContainer(container, buildScriptPath, containerHome)
+    await copyFileToContainer(container, "./create_github_repo.sh", containerHome)
+
     if (dryRun) {
 
         // This is how we can debug the build script interactively.
-        console.log("Dry run, not starting container. To debug, run:");
+        console.log("The container is still running!");
+        console.log("To debug, run:");
         console.log("-----")
-        console.log(`docker run --rm -it --env-file ${buildDirectory}build.env --entrypoint bash ${dockerTag}`)
+        console.log(`docker exec --env-file ${buildDirectory}build.env -it ${container.id} bash`)
         console.log(`source /app/create_github_repo.sh`)
         console.log("-----")
 
+        process.exit()
+
     } else {
 
-        // Create the GitHub repository.
-        const result = await createGitHubRepo(process.env.GITHUB_TOKEN, name, description);
-        if (result.html_url) {
-            console.log(`Created repository: ${result.html_url}`);
-        }
-
-        // Start the container.
-        await startContainer(container);
-        console.log(`Container ${container.id} started.`);
-
-        // Run the build scripts in the container.
-        await runCommandInContainer(container, ["mkdir", containerHome])
-        await copyFileToContainer(container, buildScriptPath, containerHome)
-        await copyFileToContainer(container, "./create_github_repo.sh", containerHome)
+        // Move the build script in the container.
         await runCommandInContainer(container, ["bash", containerHome + "create_github_repo.sh"])
 
         // Stop and remove the container.
