@@ -1,6 +1,6 @@
 // Post-processing:
 
-function applyCorrections(buildScript) {
+function applyCorrections(buildScript: string) {
     // What a hack! But small corrections like this will necessary for a while.
     return buildScript.replaceAll(/^npx /mg, 'npx --yes ')
         .replaceAll(/^echo /mg, 'echo -e ')
@@ -10,4 +10,4 @@ function applyCorrections(buildScript) {
         .replaceAll(/^git commit (.*)$/mg, 'git commit -a $1');
 }
 
-module.exports = { applyCorrections };
+export { applyCorrections };

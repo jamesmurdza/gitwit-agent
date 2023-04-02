@@ -1,6 +1,6 @@
-const fetch = require('node-fetch')
+import fetch from "node-fetch"
 
-function errorMessage(result) {
+function errorMessage(result: any) {
     if (result.errors) {
         let message = `${result.message}`;
         for (const error of result.errors) {
@@ -11,7 +11,7 @@ function errorMessage(result) {
     return undefined;
 }
 
-async function createGitHubRepo(token, name, description) {
+async function createGitHubRepo(token: string, name: string, description: string) {
     const requestOptions = {
         method: 'POST',
         headers: {
@@ -36,4 +36,5 @@ async function createGitHubRepo(token, name, description) {
 
     return result;
 }
-module.exports = { createGitHubRepo }
+
+export { createGitHubRepo }

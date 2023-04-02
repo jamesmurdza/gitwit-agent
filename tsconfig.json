@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "target": "es6",
+      "lib": ["es2021", "dom"],
+      "module": "commonjs",
+      "outDir": "dist",
+      "strict": true,
+      "types": ["node"],
+    },
+    "include": [
+      "*.ts"
+    ]
+  }

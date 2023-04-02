@@ -1,7 +1,8 @@
-const tar = require('tar');
-const path = require('path');
+import * as path from 'path';
+import * as tar from 'tar';
+import * as Docker from 'dockerode';
 
-async function createContainer(docker, tag, environment) {
+async function createContainer(docker: Docker, tag: string, environment: string[]): Promise<Docker.Container> {
     // create a new container from the image
     return await docker.createContainer({
         Image: tag, // specify the image to use
@@ -12,7 +13,7 @@ async function createContainer(docker, tag, environment) {
     });
 }
 
-async function startContainer(container) {
+async function startContainer(container: Docker.Container) {
     process.on('SIGINT', async function () {
         console.log("Caught interrupt signal");
         await container.stop({ force: true });
@@ -27,8 +28,8 @@ async function startContainer(container) {
     return stream;
 }
 
-async function waitForStreamEnd(stream) {
-    return new Promise(async (resolve, reject) => {
+async function waitForStreamEnd(stream: NodeJS.ReadableStream): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
         try {
             stream.on('end', async () => {
                 resolve();
@@ -38,8 +39,7 @@ async function waitForStreamEnd(stream) {
         }
     });
 }
-
-async function runCommandInContainer(container, command) {
+async function runCommandInContainer(container: Docker.Container, command: string[]) {
     const exec = await container.exec({
         Cmd: command,
         AttachStdout: true,
@@ -52,15 +52,10 @@ async function runCommandInContainer(container, command) {
     await waitForStreamEnd(stream);
 }
 
-async function copyFileToContainer(container, localFilePath, containerFilePath) {
+async function copyFileToContainer(container: Docker.Container, localFilePath: string, containerFilePath: string) {
     const baseDir = path.dirname(localFilePath);
     const archive = tar.create({ gzip: false, portable: true, cwd: baseDir }, [path.basename(localFilePath)]);
     await container.putArchive(archive, { path: containerFilePath });
 }
 
-module.exports = {
-    createContainer,
-    startContainer,
-    runCommandInContainer,
-    copyFileToContainer
-}
+export { createContainer, startContainer, runCommandInContainer, copyFileToContainer }

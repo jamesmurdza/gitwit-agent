@@ -1,16 +1,15 @@
-const fs = require('fs');
-const readline = require('readline');
+import * as readline from 'readline';
+import * as fs from 'fs';
+import * as Docker from 'dockerode'
+import * as dotenv from 'dotenv';
 
-const Docker = require('dockerode');
+import { createContainer, startContainer, runCommandInContainer, copyFileToContainer } from './container';
+import { simpleOpenAIRequest } from './openai';
+import { applyCorrections } from './corrections';
+import { template } from './prompt';
+import { createGitHubRepo } from './github';
 
-const { createContainer, startContainer, runCommandInContainer, copyFileToContainer } = require('./container.js');
-const { simpleOpenAIRequest } = require('./openai.js');
-const { applyCorrections } = require('./corrections.js');
-const template = require('./prompt.js')
-
-const { createGitHubRepo } = require('./github.js');
-
-require('dotenv').config();
+dotenv.config();
 
 const baseImage = "node:latest";
 const gptModel = "gpt-3.5-turbo";
@@ -24,7 +23,7 @@ const projectFilePath = buildDirectory + "build.json";
 
 // User input:
 
-function askQuestion(query) {
+function askQuestion(query: string): Promise<string> {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -44,14 +43,14 @@ function createBuildDirectory() {
     }
 }
 
-async function writeFile(path, contents) {
+async function writeFile(path: string, contents: string): Promise<void> {
     await fs.promises.writeFile(path, contents);
     console.log(`Wrote ${path}.`);
 }
 
 async function readProjectFile() {
     const data = await fs.promises.readFile(projectFilePath);
-    return JSON.parse(data)
+    return JSON.parse(data.toString());
 }
 
 // Main script:
@@ -124,7 +123,7 @@ async function readProjectFile() {
     console.log(`Container ${container.id} created.`);
 
     // Create the GitHub repository.
-    const result = await createGitHubRepo(process.env.GITHUB_TOKEN, name, description);
+    const result = await createGitHubRepo(process.env.GITHUB_TOKEN!, name, description);
     if (result.html_url) {
         console.log(`Created repository: ${result.html_url}`);
     }

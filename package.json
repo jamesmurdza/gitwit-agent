@@ -2,17 +2,24 @@
   "name": "clonegpt",
   "version": "0.0.2",
   "description": "",
-  "main": "app.js",
+  "main": "app.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "start": "tsc && node dist/app.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.0.3",
+    "fs": "^0.0.1-security",
     "node-fetch": "^2.6.9",
     "openai": "^3.2.1",
     "tar": "^6.1.13"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.16",
+    "@types/node": "^18.15.11",
+    "@types/node-fetch": "^2.6.3",
+    "@types/tar": "^6.1.4"
   }
 }

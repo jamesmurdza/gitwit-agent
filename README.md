@@ -37,6 +37,6 @@ If an issue occurs, it's possible to run again in debug mode with the same build
 ## Notes
 
 Some notes:
-- Using JavaScript—ideally would use TypeScript.
+
 - Copies a shell script into the container to configure git and pushing the repository, but it might be better to run the commands using `runCommandInContainer() `instead.
 - The `GITHUB_TOKEN` environment variable is set when running arbitrary code, which is a vulnerability.

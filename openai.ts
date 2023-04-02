@@ -1,8 +1,8 @@
-const { Configuration, OpenAIApi } = require('openai')
+import { Configuration, OpenAIApi } from 'openai'
 
 // OpenAI API:
 
-async function simpleOpenAIRequest(prompt, config) {
+async function simpleOpenAIRequest(prompt: string, config: any) {
 
     const configuration = new Configuration({
         apiKey: process.env.OPENAI_API_KEY,
@@ -18,7 +18,7 @@ async function simpleOpenAIRequest(prompt, config) {
             },
         ],
     })
-    return completion.data.choices[0].message.content;
+    return completion.data.choices[0].message!.content;
 }
 
-module.exports = { simpleOpenAIRequest }
+export { simpleOpenAIRequest }

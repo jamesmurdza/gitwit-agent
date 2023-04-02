@@ -18,4 +18,4 @@ Do not include any commands to run, start or deploy or test the app.
 
 Do not use an exit command at the end of the script.
 `;
-module.exports = template;
+export { template };
