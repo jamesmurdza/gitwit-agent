@@ -1,4 +1,4 @@
-#!/bin/bash
+export const gitScript = `#!/bin/bash
 
 git config --global user.email $GIT_AUTHOR_EMAIL
 git config --global user.name $GIT_AUTHOR_NAME
@@ -24,4 +24,4 @@ git config --global credential.helper store
 
 git branch -M main
 git remote add origin https://github.com/$GITHUB_USERNAME/$REPO_NAME.git
-git push -u origin main
+git push -u origin main`

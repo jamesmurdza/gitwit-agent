@@ -2,10 +2,10 @@
   "name": "gitwit",
   "version": "0.0.2",
   "description": "",
-  "main": "app.ts",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc && node dist/app.js"
+    "start": "tsc && node dist/cli.js"
   },
   "author": "",
   "license": "ISC",
