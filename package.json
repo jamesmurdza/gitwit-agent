@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dockerode": "^3.3.5",
     "dotenv": "^16.0.3",
     "fs": "^0.0.1-security",
     "node-fetch": "^2.6.9",
