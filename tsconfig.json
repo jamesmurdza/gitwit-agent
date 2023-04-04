@@ -1,13 +1,13 @@
 {
-    "compilerOptions": {
-      "target": "es6",
-      "lib": ["es2021", "dom"],
-      "module": "commonjs",
-      "outDir": "dist",
-      "strict": true,
-      "types": ["node"],
-    },
-    "include": [
-      "*.ts"
-    ]
-  }
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["esnext", "dom"],
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": ["*.ts"]
+}
