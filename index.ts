@@ -100,7 +100,7 @@ export class Project {
     await writeFile(buildScriptPath, this.buildScript)
 
     // Create a new docker container.
-    const docker = new Docker()
+    const docker = new Docker({ host: process.env.DOCKER_HOST, port: process.env.DOCKER_PORT })
     const container = await createContainer(docker, baseImage, this.environment)
     console.log(`Container ${container.id} created.`)
 
