@@ -18,7 +18,7 @@ async function simpleOpenAIRequest(prompt: string, config: any) {
             },
         ],
     })
-    return completion.data.choices[0].message!.content;
+    return completion.data.choices[0]!.message!.content;
 }
 
 export { simpleOpenAIRequest }

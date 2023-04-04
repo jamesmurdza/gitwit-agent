@@ -1,7 +1,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import * as os from "os"
-import * as Docker from "dockerode"
+import Docker from 'dockerode'
 import * as dotenv from "dotenv"
 
 import {
