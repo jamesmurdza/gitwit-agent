@@ -35,13 +35,15 @@ async function writeFile(path: string, contents: string): Promise<void> {
 export class Project {
   name: string
   description: string
+  user?: string
   environment: string[]
   projectInfo: any
   completion: string | null
   buildScript: string | null
 
-  constructor(name: string, description: string) {
+  constructor(name: string, description: string, user?: string) {
     this.name = name
+    this.user = user
     this.description = description
 
     // Create the environment variables for the build script.
@@ -75,6 +77,7 @@ export class Project {
     console.log("Calling on the great machine god...")
     this.completion = await simpleOpenAIRequest(prompt, {
       model: gptModel,
+      user: this.user
     })
     console.log("Prayers were answered.")
     return { completion: this.completion }
