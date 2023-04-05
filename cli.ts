@@ -17,7 +17,7 @@ function askQuestion(query: string): Promise<string> {
   )
 }
 
-;(async () => {
+(async () => {
   if (!fs.existsSync("./build")) {
     fs.mkdirSync("./build")
   }
@@ -30,7 +30,7 @@ function askQuestion(query: string): Promise<string> {
 
   // Detect metadata from a previous run.
   if (offline || again) {
-    ;({ description, repositoryName } = JSON.parse(
+    ({ description, repositoryName } = JSON.parse(
       (await readFile("./build/info.json")).toString()
     ))
   }
