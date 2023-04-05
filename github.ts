@@ -1,10 +1,12 @@
 import fetch from "node-fetch"
 
 function errorMessage(result: any) {
-  if (result.errors) {
+  if (result.message) {
     let message = `${result.message}`;
-    for (const error of result.errors) {
-      message += ` ${error.resource} ${error.message}.`;
+    if (result.errors) {
+      for (const error of result.errors) {
+        message += ` ${error.resource} ${error.message}.`;
+      }
     }
     return message;
   }
