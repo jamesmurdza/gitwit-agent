@@ -112,9 +112,11 @@ export class Project {
     const docker = new Docker({
       host: process.env.DOCKER_API_HOST,
       port: process.env.DOCKER_API_PORT,
-      ca: process.env.DOCKER_API_CA,
-      cert: process.env.DOCKER_API_CERT,
-      key: process.env.DOCKER_API_KEY,
+      // Flightcontrol doesn't support environment variables with newlines.
+      ca: process.env.DOCKER_API_CA?.replace(/\\n/g, "\n"),
+      cert: process.env.DOCKER_API_CERT?.replace(/\\n/g, "\n"),
+      key: process.env.DOCKER_API_KEY?.replace(/\\n/g, "\n"),
+      // We use HTTPS when there is an SSL key.
       protocol: process.env.DOCKER_API_KEY ? 'https' : undefined,
 
     })
