@@ -53,6 +53,7 @@ export class Project {
       `GIT_AUTHOR_EMAIL=${process.env.GIT_AUTHOR_EMAIL}`,
       `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
       `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
+      `GITHUB_ORGNAME=${process.env.GITHUB_ORGNAME || process.env.GITHUB_USERNAME}`,
       `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
       `GITWIT_VERSION=${process.env.npm_package_version}`,
     ]
@@ -111,7 +112,8 @@ export class Project {
     const result: any = await createGitHubRepo(
       process.env.GITHUB_TOKEN!,
       this.name,
-      this.description
+      this.description,
+      process.env.GITHUB_ORGNAME
     )
     if (result.html_url) {
       console.log(`Created repository: ${result.html_url}`)

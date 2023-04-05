@@ -11,7 +11,7 @@ function errorMessage(result: any) {
   return undefined;
 }
 
-async function createGitHubRepo(token: string, name: string, description: string) {
+async function createGitHubRepo(token: string, name: string, description: string, org?: string) {
   const requestOptions = {
     method: 'POST',
     headers: {
@@ -24,7 +24,9 @@ async function createGitHubRepo(token: string, name: string, description: string
       private: true
     })
   };
-  const response = await fetch('https://api.github.com/user/repos', requestOptions);
+  const response = org
+    ? await fetch(`https://api.github.com/orgs/${org}/repos`, requestOptions)
+    : await fetch('https://api.github.com/user/repos', requestOptions);
   const result = await response.json();
 
   // Print errors if there are any.
