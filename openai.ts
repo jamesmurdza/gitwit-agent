@@ -6,6 +6,7 @@ async function simpleOpenAIRequest(prompt: string, config: any) {
 
   const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
+    basePath: process.env.OPENAI_BASE_URL,
   })
   const openai = new OpenAIApi(configuration)
 
