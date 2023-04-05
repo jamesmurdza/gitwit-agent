@@ -103,8 +103,22 @@ export class Project {
     this.buildScript = applyCorrections(this.completion!.trim())
     await writeFile(buildScriptPath, this.buildScript)
 
+    // Connect to Docker...
+    console.log(
+      "Connecting to Docker on "
+      + (process.env.DOCKER_HOST ?? "localhost")
+      + (process.env.DOCKER_PORT ? `:${process.env.DOCKER_PORT}` : "")
+    );
+    const docker = new Docker({
+      host: process.env.DOCKER_HOST,
+      port: process.env.DOCKER_PORT,
+      ca: process.env.DOCKER_CA,
+      cert: process.env.DOCKER_CERT,
+      key: process.env.DOCKER_KEY,
+      protocol: process.env.DOCKER_KEY ? 'https' : undefined,
+    })
+
     // Create a new docker container.
-    const docker = new Docker({ host: process.env.DOCKER_HOST, port: process.env.DOCKER_PORT })
     const container = await createContainer(docker, baseImage, this.environment)
     console.log(`Container ${container.id} created.`)
 
