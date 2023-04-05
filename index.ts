@@ -13,7 +13,7 @@ import {
 import { simpleOpenAIRequest } from "./openai"
 import { applyCorrections } from "./corrections"
 import { template } from "./prompt"
-import { createGitHubRepo } from "./github"
+import { createGitHubRepo, addGitHubCollaborator } from "./github"
 import { gitScript } from "./git"
 
 dotenv.config()
@@ -123,14 +123,23 @@ export class Project {
     console.log(`Container ${container.id} created.`)
 
     // Create the GitHub repository.
-    const result: any = await createGitHubRepo(
+    const repo: any = await createGitHubRepo(
       process.env.GITHUB_TOKEN!,
       this.name,
       this.description,
       process.env.GITHUB_ORGNAME
     )
-    if (result.html_url) {
-      console.log(`Created repository: ${result.html_url}`)
+    if (repo.html_url) {
+      console.log(`Created repository: ${repo.html_url}`)
+    }
+
+    if (repo.full_name && username) {
+      const result = username ? await addGitHubCollaborator(
+        process.env.GITHUB_TOKEN!,
+        repo.full_name,
+        username
+      ) : null
+      console.log(`Added ${username} to ${repo.full_name}.`)
     }
 
     // Start the container.
@@ -167,7 +176,7 @@ export class Project {
     return {
       buildScript: this.buildScript,
       buildLog: "",
-      repositoryURL: result.html_url,
+      repositoryURL: repo.html_url,
     }
   }
 }

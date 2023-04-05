@@ -34,11 +34,40 @@ async function createGitHubRepo(token: string, name: string, description: string
   // Print errors if there are any.
   const message = errorMessage(result);
   if (message) {
-    console.log(message)
+    throw new Error(message)
     return false;
   }
 
   return result;
 }
 
-export { createGitHubRepo }
+async function addGitHubCollaborator(token: string, repoName: string, collaborator: string) {
+  // Add collaborator to the repo.
+  // Note: Repo name is in the format of "org/repo".
+  const requestOptions = {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      permission: 'push'
+    })
+  };
+
+  const response = await fetch(`https://api.github.com/repos/${repoName}/collaborators/${collaborator}`, requestOptions);
+  if (response.status === 204) {
+    return true;
+  } else {
+    const result = await response.json();
+    // Print errors if there are any.
+    const message = errorMessage(result);
+    if (message) {
+      throw new Error(message)
+      return false;
+    }
+    return result;
+  }
+}
+
+export { createGitHubRepo, addGitHubCollaborator }
