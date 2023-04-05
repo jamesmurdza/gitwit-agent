@@ -106,16 +106,17 @@ export class Project {
     // Connect to Docker...
     console.log(
       "Connecting to Docker on "
-      + (process.env.DOCKER_HOST ?? "localhost")
-      + (process.env.DOCKER_PORT ? `:${process.env.DOCKER_PORT}` : "")
+      + (process.env.DOCKER_API_HOST ?? "localhost")
+      + (process.env.DOCKER_API_PORT ? `:${process.env.DOCKER_API_PORT}` : "")
     );
     const docker = new Docker({
-      host: process.env.DOCKER_HOST,
-      port: process.env.DOCKER_PORT,
-      ca: process.env.DOCKER_CA,
-      cert: process.env.DOCKER_CERT,
-      key: process.env.DOCKER_KEY,
-      protocol: process.env.DOCKER_KEY ? 'https' : undefined,
+      host: process.env.DOCKER_API_HOST,
+      port: process.env.DOCKER_API_PORT,
+      ca: process.env.DOCKER_API_CA,
+      cert: process.env.DOCKER_API_CERT,
+      key: process.env.DOCKER_API_KEY,
+      protocol: process.env.DOCKER_API_KEY ? 'https' : undefined,
+
     })
 
     // Create a new docker container.
