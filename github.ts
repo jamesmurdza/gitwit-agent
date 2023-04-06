@@ -17,7 +17,7 @@ function incrementName(name: string) {
   const regex = /\-(\d+)$/;
   const match = name.match(regex);
   if (match) {
-    const number = parseInt(match[1]);
+    const number = parseInt(match[1]!);
     return name.replace(regex, `-${number + 1}`);
   } else {
     return `${name}-1`;
@@ -27,7 +27,7 @@ function incrementName(name: string) {
 async function createGitHubRepo(token: string, name: string, description: string, org?: string, attempts: number = 10) {
   let failedAttempts = 0;
   let currentName = name;
-  let result = null;
+  let result: any = {};
 
   // Try new names until we find one that doesn't exist, or we run out of attempts.
   while (failedAttempts < attempts) {
@@ -50,7 +50,7 @@ async function createGitHubRepo(token: string, name: string, description: string
     const response = org
       ? await fetch(`https://api.github.com/orgs/${org}/repos`, requestOptions)
       : await fetch('https://api.github.com/user/repos', requestOptions);
-    result = await response.json();
+    result = await response.json() ?? {};
 
     // If the repo already exists, add a number to the end of the name.
     if (result.errors && result.errors[0].field === "name") {
