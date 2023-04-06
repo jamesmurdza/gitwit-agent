@@ -2,7 +2,7 @@ import { Configuration, OpenAIApi } from 'openai'
 
 // OpenAI API:
 
-type Completion = { text: string; id: string; model: string };
+export type Completion = { text: string; id: string; model: string };
 
 async function simpleOpenAIRequest(prompt: string, config: any): Promise<Completion> {
 
@@ -37,4 +37,4 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
   };
 }
 
-export { simpleOpenAIRequest, Completion }
+export { simpleOpenAIRequest }
