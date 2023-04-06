@@ -45,13 +45,17 @@ function askQuestion(query: string): Promise<string> {
   let project = new Project(repositoryName, description)
 
   if (offline) {
-    project.completion = (await readFile("./build/completion.json")).toString()
+    const completionFile = await readFile("./build/completion.json");
+    const infoFile = await readFile("./build/info.json");
+    const text = completionFile.toString()
+    const { id, model } = JSON.parse(infoFile.toString())
+    project.completion = { text, id, model }
   } else {
-    let { completion } = await project.getCompletion()
-    await writeFile("./build/completion.json", completion!)
+    let { text } = await project.getCompletion()
+    await writeFile("./build/completion.json", text!)
   }
 
-  let { buildScript, buildLog, repositoryURL } = await project.buildAndPush("gitwitdev", debug)
+  let { buildScript, buildLog, repositoryURL } = await project.buildAndPush(undefined, debug)
 })().catch((err) => {
   console.error(err)
   process.exit(1)

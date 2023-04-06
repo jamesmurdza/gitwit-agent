@@ -2,7 +2,9 @@ import { Configuration, OpenAIApi } from 'openai'
 
 // OpenAI API:
 
-async function simpleOpenAIRequest(prompt: string, config: any) {
+type Completion = { text: string; id: string; model: string };
+
+async function simpleOpenAIRequest(prompt: string, config: any): Promise<Completion> {
 
   const baseOptions = process.env.OPENAI_CACHE_ENABLED ? {
     headers: {
@@ -27,7 +29,12 @@ async function simpleOpenAIRequest(prompt: string, config: any) {
       },
     ],
   })
-  return completion.data.choices[0]!.message!.content;
+
+  return {
+    text: completion.data.choices[0]!.message!.content,
+    id: completion.data.id,
+    model: completion.data.model
+  };
 }
 
-export { simpleOpenAIRequest }
+export { simpleOpenAIRequest, Completion }

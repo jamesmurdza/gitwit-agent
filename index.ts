@@ -11,7 +11,7 @@ import {
   runCommandInContainer,
   copyFileToContainer,
 } from "./container"
-import { simpleOpenAIRequest } from "./openai"
+import { simpleOpenAIRequest, Completion } from "./openai"
 import { applyCorrections } from "./corrections"
 import { template } from "./prompt"
 import { createGitHubRepo, addGitHubCollaborator } from "./github"
@@ -39,7 +39,7 @@ export class Project {
   user?: string
   environment: string[] = []
   projectInfo: any
-  completion: string | null = null
+  completion: any | null = null
   buildScript: string | null = null
 
   constructor(name: string, description: string, user?: string) {
@@ -48,7 +48,7 @@ export class Project {
     this.description = description
   }
 
-  getCompletion = async () => {
+  getCompletion = async (): Promise<Completion> => {
     // Generate the build script using ChatGPT.
     const prompt = template
       .replace("{DESCRIPTION}", this.description)
@@ -61,7 +61,7 @@ export class Project {
       user: this.user
     })
     console.log("Prayers were answered.")
-    return { completion: this.completion }
+    return this.completion
   }
 
   buildAndPush = async (username?: string, debug: boolean = false) => {
@@ -74,7 +74,7 @@ export class Project {
     const projectFilePath = buildDirectory + "project.json"
 
     // Generate the build script from the OpenAI completion.
-    this.buildScript = applyCorrections(this.completion!.trim())
+    this.buildScript = applyCorrections(this.completion.text.trim())
     await writeFile(buildScriptPath, this.buildScript)
 
     // Connect to Docker...
@@ -126,13 +126,14 @@ export class Project {
       description: this.description,
       generator: "GitWit",
       generatorVersion: packageInfo.version,
-      gptModel: gptModel,
+      gptModel: this.completion.model,
+      completionId: this.completion.id,
       repositoryURL: repo.clone_url,
       dateCreated: new Date().toISOString(),
     }
 
     // Generate the project metadata file.
-    await writeFile(projectFilePath, JSON.stringify(this.projectInfo))
+    await writeFile(projectFilePath, JSON.stringify(this.projectInfo, null, "\t"))
 
     // Create a new docker container.
     const container = await createContainer(docker, baseImage, this.environment)
@@ -142,7 +143,7 @@ export class Project {
       const result = username ? await addGitHubCollaborator(
         process.env.GITHUB_TOKEN!,
         repo.full_name,
-        username
+        username!
       ) : null
       console.log(`Added ${username} to ${repo.full_name}.`)
     }
