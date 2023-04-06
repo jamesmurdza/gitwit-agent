@@ -13,29 +13,59 @@ function errorMessage(result: any) {
   return undefined;
 }
 
-async function createGitHubRepo(token: string, name: string, description: string, org?: string) {
-  const requestOptions = {
-    method: 'POST',
-    headers: {
-      'Authorization': `token ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: name,
-      description: description,
-      private: true
-    })
-  };
-  const response = org
-    ? await fetch(`https://api.github.com/orgs/${org}/repos`, requestOptions)
-    : await fetch('https://api.github.com/user/repos', requestOptions);
-  const result = await response.json();
+function incrementName(name: string) {
+  const regex = /\-(\d+)$/;
+  const match = name.match(regex);
+  if (match) {
+    const number = parseInt(match[1]);
+    return name.replace(regex, `-${number + 1}`);
+  } else {
+    return `${name}-1`;
+  }
+}
 
-  // Print errors if there are any.
+async function createGitHubRepo(token: string, name: string, description: string, org?: string, attempts: number = 10) {
+  let failedAttempts = 0;
+  let currentName = name;
+  let result = null;
+
+  // Try new names until we find one that doesn't exist, or we run out of attempts.
+  while (failedAttempts < attempts) {
+
+    // Request to the GitHub API.
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: currentName,
+        description: description,
+        private: true
+      })
+    };
+
+    // Create the repo at username/repo or org/repo.
+    const response = org
+      ? await fetch(`https://api.github.com/orgs/${org}/repos`, requestOptions)
+      : await fetch('https://api.github.com/user/repos', requestOptions);
+    result = await response.json();
+
+    // If the repo already exists, add a number to the end of the name.
+    if (result.errors && result.errors[0].field === "name") {
+      console.log(`Repository name already exists. Trying ${currentName}.`)
+      failedAttempts++
+      currentName = incrementName(currentName);
+    } else {
+      break;
+    }
+  }
+
+  // Throw an error if repository creation failed.
   const message = errorMessage(result);
   if (message) {
     throw new Error(message)
-    return false;
   }
 
   return result;
