@@ -122,7 +122,7 @@ export class Project {
     await writeFile(environmentFilePath, this.environment.join("\n"))
 
     this.projectInfo = {
-      name: this.name,
+      repositoryName: this.name,
       description: this.description,
       generator: "GitWit",
       generatorVersion: packageInfo.version,
