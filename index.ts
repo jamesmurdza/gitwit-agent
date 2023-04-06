@@ -37,18 +37,15 @@ export class Project {
   name: string
   description: string
   user?: string
-  environment: string[]
+  environment: string[] = []
   projectInfo: any
-  completion: string | null
-  buildScript: string | null
+  completion: string | null = null
+  buildScript: string | null = null
 
   constructor(name: string, description: string, user?: string) {
     this.name = name
     this.user = user
     this.description = description
-
-    this.completion = null
-    this.buildScript = null
   }
 
   getCompletion = async () => {
