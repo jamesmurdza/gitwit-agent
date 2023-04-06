@@ -3,6 +3,7 @@ import * as path from "path"
 import * as os from "os"
 import Docker from 'dockerode'
 import * as dotenv from "dotenv"
+import packageInfo from './package.json';
 
 import {
   createContainer,
@@ -46,13 +47,6 @@ export class Project {
     this.user = user
     this.description = description
 
-    this.projectInfo = {
-      name: this.name,
-      description: this.description,
-      generatorVersion: process.env.npm_package_version,
-      gptModel: gptModel,
-    }
-
     this.completion = null
     this.buildScript = null
   }
@@ -80,10 +74,7 @@ export class Project {
     // Intermediate build products.
     const buildScriptPath = buildDirectory + "build.sh"
     const environmentFilePath = buildDirectory + "build.env"
-    const projectFilePath = buildDirectory + "build.json"
-
-    // Generate the project metadata file.
-    await writeFile(projectFilePath, JSON.stringify(this.projectInfo))
+    const projectFilePath = buildDirectory + "project.json"
 
     // Generate the build script from the OpenAI completion.
     this.buildScript = applyCorrections(this.completion!.trim())
@@ -127,11 +118,24 @@ export class Project {
       `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
       `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
       `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
-      `GITWIT_VERSION=${process.env.npm_package_version}`,
+      `GITWIT_VERSION=${packageInfo.version}`,
     ]
 
     // The environment file is only used for debugging.
     await writeFile(environmentFilePath, this.environment.join("\n"))
+
+    this.projectInfo = {
+      name: this.name,
+      description: this.description,
+      generator: "GitWit",
+      generatorVersion: packageInfo.version,
+      gptModel: gptModel,
+      repositoryURL: repo.clone_url,
+      dateCreated: new Date().toISOString(),
+    }
+
+    // Generate the project metadata file.
+    await writeFile(projectFilePath, JSON.stringify(this.projectInfo))
 
     // Create a new docker container.
     const container = await createContainer(docker, baseImage, this.environment)
@@ -153,6 +157,7 @@ export class Project {
     // Move the build scripts to the container.
     await runCommandInContainer(container, ["mkdir", containerHome])
     await copyFileToContainer(container, buildScriptPath, containerHome)
+    await copyFileToContainer(container, projectFilePath, containerHome)
     await writeFile(buildDirectory + "gitwit.sh", gitScript)
     await copyFileToContainer(container, buildDirectory + "gitwit.sh", containerHome)
 
