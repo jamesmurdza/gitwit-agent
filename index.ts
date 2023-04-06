@@ -71,7 +71,7 @@ export class Project {
     // Intermediate build products.
     const buildScriptPath = buildDirectory + "build.sh"
     const environmentFilePath = buildDirectory + "build.env"
-    const projectFilePath = buildDirectory + "project.json"
+    const projectFilePath = buildDirectory + "info.json"
 
     // Generate the build script from the OpenAI completion.
     this.buildScript = applyCorrections(this.completion.text.trim())

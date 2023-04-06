@@ -17,8 +17,8 @@ cp /app/build.sh ./_gitwit/build.sh
 git add -f ./_gitwit/build.sh
 cp /app/build.log ./_gitwit/build.log
 git add -f ./_gitwit/build.log
-cp /app/project.json ./_gitwit/project.json
-git add -f ./_gitwit/project.json
+cp /app/info.json ./_gitwit/info.json
+git add -f ./_gitwit/info.json
 git commit -m "Finished code generation, adding logs"
 
 echo "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com" >> ~/.git-credentials
