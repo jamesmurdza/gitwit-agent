@@ -46,17 +46,6 @@ export class Project {
     this.user = user
     this.description = description
 
-    // Create the environment variables for the build script.
-    this.environment = [
-      `REPO_NAME=${name}`,
-      `REPO_DESCRIPTION=${description}`,
-      `GIT_AUTHOR_EMAIL=${process.env.GIT_AUTHOR_EMAIL}`,
-      `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
-      `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
-      `GITHUB_ORGNAME=${process.env.GITHUB_ORGNAME || process.env.GITHUB_USERNAME}`,
-      `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
-      `GITWIT_VERSION=${process.env.npm_package_version}`,
-    ]
     this.projectInfo = {
       name: this.name,
       description: this.description,
@@ -93,9 +82,6 @@ export class Project {
     const environmentFilePath = buildDirectory + "build.env"
     const projectFilePath = buildDirectory + "build.json"
 
-    // The environment file is only used for debugging.
-    await writeFile(environmentFilePath, this.environment.join("\n"))
-
     // Generate the project metadata file.
     await writeFile(projectFilePath, JSON.stringify(this.projectInfo))
 
@@ -121,10 +107,6 @@ export class Project {
 
     })
 
-    // Create a new docker container.
-    const container = await createContainer(docker, baseImage, this.environment)
-    console.log(`Container ${container.id} created.`)
-
     // Create the GitHub repository.
     const repo: any = await createGitHubRepo(
       process.env.GITHUB_TOKEN!,
@@ -135,6 +117,25 @@ export class Project {
     if (repo.html_url) {
       console.log(`Created repository: ${repo.html_url}`)
     }
+
+    // Create the environment variables for the build script.
+    this.environment = [
+      `REPO_NAME=${this.name}`,
+      `REPO_DESCRIPTION=${this.description}`,
+      `REPO_URL=${repo.clone_url}`,
+      `GIT_AUTHOR_EMAIL=${process.env.GIT_AUTHOR_EMAIL}`,
+      `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
+      `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
+      `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
+      `GITWIT_VERSION=${process.env.npm_package_version}`,
+    ]
+
+    // The environment file is only used for debugging.
+    await writeFile(environmentFilePath, this.environment.join("\n"))
+
+    // Create a new docker container.
+    const container = await createContainer(docker, baseImage, this.environment)
+    console.log(`Container ${container.id} created.`)
 
     if (repo.full_name && username) {
       const result = username ? await addGitHubCollaborator(

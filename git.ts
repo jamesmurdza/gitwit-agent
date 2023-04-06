@@ -23,5 +23,5 @@ echo "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com" >> ~/.git-credentials
 git config --global credential.helper store
 
 git branch -M main
-git remote add origin https://github.com/$GITHUB_ORGNAME/$REPO_NAME.git
+git remote add origin $REPO_URL
 git push -u origin main`
