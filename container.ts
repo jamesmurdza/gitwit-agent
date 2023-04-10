@@ -2,11 +2,11 @@ import * as path from 'path';
 import * as tar from 'tar';
 import * as Docker from 'dockerode';
 
-async function createContainer(docker: Docker, tag: string, environment: string[]): Promise<Docker.Container> {
+async function createContainer(docker: Docker, tag: string, environment?: string[]): Promise<Docker.Container> {
   // create a new container from the image
   return await docker.createContainer({
     Image: tag, // specify the image to use
-    Env: environment,
+    Env: environment ?? [],
     Tty: true,
     Cmd: ['/bin/sh'],
     OpenStdin: true,

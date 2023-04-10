@@ -1,11 +1,11 @@
 export const gitScript = `#!/bin/bash
 
-git config --global user.email $GIT_AUTHOR_EMAIL
-git config --global user.name $GIT_AUTHOR_NAME
+git config --global user.email {GIT_AUTHOR_EMAIL}
+git config --global user.name {GIT_AUTHOR_NAME}
 git config --global init.defaultBranch main
 
-mkdir $REPO_NAME
-cd $REPO_NAME
+mkdir {REPO_NAME}
+cd {REPO_NAME}
 
 source /app/build.sh > /app/build.log 2>&1
 
@@ -21,9 +21,9 @@ cp /app/info.json ./_gitwit/info.json
 git add -f ./_gitwit/info.json
 git commit -m "Finished code generation, adding logs"
 
-echo "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com" >> ~/.git-credentials
+echo "https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com" >> ~/.git-credentials
 git config --global credential.helper store
 
 git branch -M main
-git remote add origin $REPO_URL
+git remote add origin {REPO_URL}
 git push -u origin main`

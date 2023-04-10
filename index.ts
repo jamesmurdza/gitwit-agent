@@ -37,7 +37,6 @@ export class Project {
   name: string
   description: string
   user?: string
-  environment: string[] = []
   projectInfo: any
   completion: any | null = null
   buildScript: string | null = null
@@ -70,7 +69,6 @@ export class Project {
 
     // Intermediate build products.
     const buildScriptPath = buildDirectory + "build.sh"
-    const environmentFilePath = buildDirectory + "build.env"
     const projectFilePath = buildDirectory + "info.json"
 
     // Generate the build script from the OpenAI completion.
@@ -106,21 +104,6 @@ export class Project {
       console.log(`Created repository: ${repo.html_url}`)
     }
 
-    // Create the environment variables for the build script.
-    this.environment = [
-      `REPO_NAME=${this.name}`,
-      `REPO_DESCRIPTION=${this.description}`,
-      `REPO_URL=${repo.clone_url}`,
-      `GIT_AUTHOR_EMAIL=${process.env.GIT_AUTHOR_EMAIL}`,
-      `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME}`,
-      `GITHUB_USERNAME=${process.env.GITHUB_USERNAME}`,
-      `GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`,
-      `GITWIT_VERSION=${packageInfo.version}`,
-    ]
-
-    // The environment file is only used for debugging.
-    await writeFile(environmentFilePath, this.environment.join("\n"))
-
     this.projectInfo = {
       repositoryName: this.name,
       description: this.description,
@@ -136,7 +119,7 @@ export class Project {
     await writeFile(projectFilePath, JSON.stringify(this.projectInfo, null, "\t"))
 
     // Create a new docker container.
-    const container = await createContainer(docker, baseImage, this.environment)
+    const container = await createContainer(docker, baseImage)
     console.log(`Container ${container.id} created.`)
 
     if (repo.full_name && username) {
@@ -152,26 +135,43 @@ export class Project {
     await startContainer(container)
     console.log(`Container ${container.id} started.`)
 
+    // Substitutes values in a template string.
+    const substituteArguments = (templateString: string, values: { [key: string]: string }): string => {
+      return Object.keys(values).reduce(
+        (acc, key) => acc.replaceAll(`{${key}}`, values[key]),
+        templateString
+      );
+    };
+
     // Move the build scripts to the container.
     await runCommandInContainer(container, ["mkdir", containerHome])
     await copyFileToContainer(container, buildScriptPath, containerHome)
     await copyFileToContainer(container, projectFilePath, containerHome)
-    await writeFile(buildDirectory + "gitwit.sh", gitScript)
-    await copyFileToContainer(container, buildDirectory + "gitwit.sh", containerHome)
+
+    // Create the environment variables for the build script.
+    const environment = {
+      REPO_NAME: this.name,
+      REPO_DESCRIPTION: this.description,
+      REPO_URL: repo.clone_url,
+      GIT_AUTHOR_EMAIL: process.env.GIT_AUTHOR_EMAIL!,
+      GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME!,
+      GITHUB_USERNAME: process.env.GITHUB_USERNAME!,
+      GITHUB_TOKEN: process.env.GITHUB_TOKEN!,
+      GITWIT_VERSION: packageInfo.version,
+    }
+
+    await runCommandInContainer(container, ["bash", "-c", substituteArguments(gitScript, environment)])
 
     if (debug) {
       // This is how we can debug the build script interactively.
       console.log("The container is still running!")
       console.log("To debug, run:")
       console.log("-----")
-      console.log(`docker exec --env-file ${buildDirectory}build.env -it ${container.id} bash`)
-      console.log(`source /app/gitwit.sh`)
+      console.log(`docker exec -it ${container.id} bash`)
       console.log("-----")
 
       process.exit()
     } else {
-      // Move the build script in the container.
-      await runCommandInContainer(container, ["bash", containerHome + "gitwit.sh"])
 
       // Stop and remove the container.
       await container.stop()
