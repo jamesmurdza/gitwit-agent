@@ -9,13 +9,14 @@ import {
   createContainer,
   startContainer,
   runCommandInContainer,
+  runScriptInContainer,
   copyFileToContainer,
 } from "./container"
 import { simpleOpenAIRequest, Completion } from "./openai"
 import { applyCorrections } from "./corrections"
 import { template } from "./prompt"
 import { createGitHubRepo, addGitHubCollaborator } from "./github"
-import { gitScript } from "./git"
+import * as scripts from "./scripts"
 
 dotenv.config()
 
@@ -37,7 +38,6 @@ export class Project {
   name: string
   description: string
   user?: string
-  projectInfo: any
   completion: any | null = null
   buildScript: string | null = null
 
@@ -90,7 +90,6 @@ export class Project {
       key: process.env.DOCKER_API_KEY?.replace(/\\n/g, "\n"),
       // We use HTTPS when there is an SSL key.
       protocol: process.env.DOCKER_API_KEY ? 'https' : undefined,
-
     })
 
     // Create the GitHub repository.
@@ -100,11 +99,10 @@ export class Project {
       this.description,
       process.env.GITHUB_ORGNAME
     )
-    if (repo.html_url) {
-      console.log(`Created repository: ${repo.html_url}`)
-    }
+    console.log(`Created repository: ${repo.html_url}`)
 
-    this.projectInfo = {
+    // Generate the project metadata file.
+    const projectInfo = {
       repositoryName: this.name,
       description: this.description,
       generator: "GitWit",
@@ -114,14 +112,13 @@ export class Project {
       repositoryURL: repo.clone_url,
       dateCreated: new Date().toISOString(),
     }
-
-    // Generate the project metadata file.
-    await writeFile(projectFilePath, JSON.stringify(this.projectInfo, null, "\t"))
+    await writeFile(projectFilePath, JSON.stringify(projectInfo, null, "\t"))
 
     // Create a new docker container.
     const container = await createContainer(docker, baseImage)
     console.log(`Container ${container.id} created.`)
 
+    // Add the user as a collaborator on the GitHub repository.
     if (repo.full_name && username) {
       const result = username ? await addGitHubCollaborator(
         process.env.GITHUB_TOKEN!,
@@ -135,21 +132,13 @@ export class Project {
     await startContainer(container)
     console.log(`Container ${container.id} started.`)
 
-    // Substitutes values in a template string.
-    const substituteArguments = (templateString: string, values: { [key: string]: string }): string => {
-      return Object.keys(values).reduce(
-        (acc, key) => acc.replaceAll(`{${key}}`, values[key]),
-        templateString
-      );
-    };
-
-    // Move the build scripts to the container.
+    // Move the build script to the container.
     await runCommandInContainer(container, ["mkdir", containerHome])
     await copyFileToContainer(container, buildScriptPath, containerHome)
     await copyFileToContainer(container, projectFilePath, containerHome)
 
-    // Create the environment variables for the build script.
-    const environment = {
+    // Define the parameters used by the scripts.
+    const parameters = {
       REPO_NAME: this.name,
       REPO_DESCRIPTION: this.description,
       REPO_URL: repo.clone_url,
@@ -160,7 +149,16 @@ export class Project {
       GITWIT_VERSION: packageInfo.version,
     }
 
-    await runCommandInContainer(container, ["bash", "-c", substituteArguments(gitScript, environment)])
+    // These scripts are run together to maintain the current directory.
+    await runScriptInContainer(container,
+      scripts.SETUP_GIT_CONFIG +  // Setup the git commit author
+      scripts.MAKE_PROJECT_DIR +  // Create an empty project directory.
+      scripts.RUN_BUILD_SCRIPT +  // Run the build script.
+      scripts.CD_GIT_ROOT +
+      scripts.ADD_BUILD_LOGS +    // Add build log and push to GitHub.
+      scripts.SETUP_GIT_CREDENTIALS +
+      scripts.PUSH_TO_REPO,
+      parameters)
 
     if (debug) {
       // This is how we can debug the build script interactively.
@@ -170,9 +168,9 @@ export class Project {
       console.log(`docker exec -it ${container.id} bash`)
       console.log("-----")
 
+      // If we don't this, the process won't end because the container is running.
       process.exit()
     } else {
-
       // Stop and remove the container.
       await container.stop()
       console.log(`Container ${container.id} stopped.`)

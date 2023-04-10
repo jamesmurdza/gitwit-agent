@@ -39,6 +39,7 @@ async function waitForStreamEnd(stream: NodeJS.ReadableStream): Promise<void> {
     }
   });
 }
+
 async function runCommandInContainer(container: Docker.Container, command: string[]) {
   const exec = await container.exec({
     Cmd: command,
@@ -52,10 +53,23 @@ async function runCommandInContainer(container: Docker.Container, command: strin
   await waitForStreamEnd(stream);
 }
 
+async function runScriptInContainer(container: Docker.Container, script: string, parameters: { [key: string]: string }) {
+  // Substitutes values in the template string.
+  const replaceParameters = (templateString: string, parameters: { [key: string]: string }): string => {
+    return Object.keys(parameters).reduce(
+      (acc, key) => acc.replaceAll(`{${key}}`, parameters[key]),
+      templateString
+    );
+  };
+
+  // Run the given script as a bash script.
+  await runCommandInContainer(container, ["bash", "-c", replaceParameters(script, parameters)])
+}
+
 async function copyFileToContainer(container: Docker.Container, localFilePath: string, containerFilePath: string) {
   const baseDir = path.dirname(localFilePath);
   const archive = tar.create({ gzip: false, portable: true, cwd: baseDir }, [path.basename(localFilePath)]);
   await container.putArchive(archive, { path: containerFilePath });
 }
 
-export { createContainer, startContainer, runCommandInContainer, copyFileToContainer }
+export { createContainer, startContainer, runCommandInContainer, runScriptInContainer, copyFileToContainer }
