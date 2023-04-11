@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc && node dist/cli.js"
+    "start": "tsc --module commonjs && node dist/cli.js"
   },
   "author": "",
   "license": "ISC",
