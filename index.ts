@@ -246,7 +246,8 @@ export class Project {
       buildScript: this.buildScript,
       buildLog: "",
       repositoryURL: githubURL,
-      branchURL: `${githubURL}/tree/${branchName}`,
+      branchURL: branchName ? `${githubURL}/tree/${branchName}` : githubURL,
+      repositoryName: this.name,
     }
   }
 }
