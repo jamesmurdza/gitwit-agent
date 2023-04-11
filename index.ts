@@ -58,21 +58,31 @@ export class Project {
 
   private getCompletion = async (isBranch: boolean): Promise<Completion> => {
     // Generate the build script using ChatGPT.
+
+    const cleanHistory = (history: string) => {
+      return history
+        .replace(/[^\x00-\x7F]+/g, "") // Remove non-ASCII characters
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/g, "") // Remove ASCII control characters
+        .slice(-5000)
+    }
+
     const prompt = (isBranch ? changeProjectPrompt : newProjectPrompt)
       .replace("{DESCRIPTION}", this.description)
       .replace("{REPOSITORY_NAME}", this.name)
       .replace("{BASE_IMAGE}", baseImage)
-      .replace("{GIT_HISTORY}", this.gitHistory ?? "")
+      .replace("{GIT_HISTORY}", cleanHistory(this.gitHistory ?? ""))
 
     console.log("Calling on the great machine god...")
     this.completion = await simpleOpenAIRequest(prompt, {
       model: gptModel,
       user: this.user
-    })
+    });
+
     if (this.completion.error !== undefined) {
       throw new Error(`OpenAI API Error: ${this.completion.error}`)
     }
     console.log("Prayers were answered.")
+
     return this.completion
   }
 
@@ -188,6 +198,7 @@ export class Project {
         scripts.SETUP_GIT_CONFIG +  // Setup the git commit author
         scripts.CLONE_PROJECT_REPO,
         parameters);
+
       this.gitHistory = await runScriptInContainer(container,
         scripts.GET_GIT_HISTORY,
         parameters, true);

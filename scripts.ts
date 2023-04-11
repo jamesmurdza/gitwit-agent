@@ -57,7 +57,7 @@ cd {REPO_NAME}
 // Get the git history of the repository.
 export const GET_GIT_HISTORY = `
 cd ~/{REPO_NAME}
-git log -p -- . ":(exclude)_gitwit/"
+git log -p -- . ":(exclude)_gitwit/:(exclude)package-lock.json"
 `
 
 // Create a new git branch.
