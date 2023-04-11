@@ -14,29 +14,26 @@ Before running, copy .env.example to .env and add missing information.
 
 ## Usage
 
-Start:
+Generate a new GitHub repository:
 
 `npm run start`
 
-Start with the same parameters as the last run:
+Generate a repository with the same name and description as the last run:
 
 `npm run start -- --again`
 
-Start with the same parameters as the last run, and the same build script:
+Generate a repository with the same name, description, and build script as the last run:
 
 `npm run start -- --offline`
 
-Debug mode, enables entering the container to look for problems:
-
-`npm run start -- --debug`
-
-If an issue occurs, it's possible to run again in debug mode with the same build script:
+Debug the build script from the last run:
 
 `npm run start -- --offline --debug`
 
-## Notes
+Generate a new branch on an existing repository:
 
-Some notes:
+`npm run start -- --branch`
 
-- Copies a shell script into the container to configure git and pushing the repository, but it might be better to run the commands using `runCommandInContainer() `instead.
-- The `GITHUB_TOKEN` environment variable is set when running arbitrary code, which is a vulnerability.
+Generate a new branch with the same name and description as the last run:
+
+`npm run start -- --branch --again`
