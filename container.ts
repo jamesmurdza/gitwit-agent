@@ -60,7 +60,7 @@ async function runScriptInContainer(container: Docker.Container, script: string,
   // Substitutes values in the template string.
   const replaceParameters = (templateString: string, parameters: { [key: string]: string }): string => {
     return Object.keys(parameters).reduce(
-      (acc, key) => acc.replaceAll(`{${key}}`, parameters[key] ?? ""),
+      (acc, key) => acc.replace(new RegExp(`{${key}}`, "g"), parameters[key] ?? ""),
       templateString
     );
   };
