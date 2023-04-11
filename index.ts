@@ -15,7 +15,7 @@ import {
 import { simpleOpenAIRequest, Completion } from "./openai"
 import { applyCorrections } from "./corrections"
 import { newProjectPrompt, changeProjectPrompt } from "./prompt"
-import { createGitHubRepo, addGitHubCollaborator } from "./github"
+import { createGitHubRepo, addGitHubCollaborator, correctBranchName } from "./github"
 import * as scripts from "./scripts"
 
 dotenv.config()
@@ -36,6 +36,7 @@ async function writeFile(path: string, contents: string): Promise<void> {
 // Project generation
 export class Project {
   name: string
+  branchName: string
   description: string
   user?: string
   repositoryURL?: string
@@ -43,8 +44,9 @@ export class Project {
   buildScript: string | null = null
   gitHistory: string | null = null
 
-  constructor(name: string, description: string, user?: string, repositoryURL?: string) {
+  constructor(name: string, description: string, user?: string, repositoryURL?: string, branchName?: string) {
     this.name = name
+    this.branchName = branchName ?? "new-feature"
     this.user = user
     this.description = description
     this.repositoryURL = repositoryURL
@@ -140,6 +142,12 @@ export class Project {
       this.repositoryURL = repo.clone_url
     }
 
+    const branchName = isBranch ? await correctBranchName(
+      process.env.GITHUB_TOKEN!,
+      `${account}/${this.name}`,
+      this.branchName
+    ) : "main"
+
     // Define the parameters used by the scripts.
     const parameters = {
       REPO_NAME: this.name,
@@ -150,7 +158,7 @@ export class Project {
       GITHUB_USERNAME: process.env.GITHUB_USERNAME!,
       GITHUB_TOKEN: process.env.GITHUB_TOKEN!,
       GITWIT_VERSION: packageInfo.version,
-      BRANCH_NAME: isBranch ? "new-feature" : "main",
+      BRANCH_NAME: branchName,
       GITHUB_ACCOUNT: account!,
       GIT_HISTORY: this.gitHistory ?? "",
     }
