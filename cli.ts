@@ -23,18 +23,16 @@ function askQuestion(query: string): Promise<string> {
     fs.mkdirSync("./build")
   }
 
-  let again = process.argv.includes("--again") // Use user input from the last run.
-  let offline = process.argv.includes("--offline") // Use build script from the last run.
-  let debug = process.argv.includes("--debug") // Leave the container running to debug.
-  let branch = process.argv.includes("--branch")
+  const again = process.argv.includes("--again") // Use user input from the last run.
+  const offline = process.argv.includes("--offline") // Use build script from the last run.
+  const debug = process.argv.includes("--debug") // Leave the container running to debug.
+  const branch = process.argv.includes("--branch")
 
-  let account = process.env.GITHUB_ORGNAME || process.env.GITHUB_USERNAME
-
-  let description, repositoryName
+  let description, repositoryName, branchName
 
   // Detect metadata from a previous run.
   if (offline || again) {
-    ({ description, repositoryName } = JSON.parse(
+    ({ description, repositoryName, branchName } = JSON.parse(
       (await readFile("./build/info.json")).toString()
     ))
   }
@@ -43,7 +41,10 @@ function askQuestion(query: string): Promise<string> {
     console.log("Let's cook up a new project!")
     description = await askQuestion("What would you like to make? ")
     repositoryName = await askQuestion("Repository name: ")
-    await writeFile("./build/info.json", JSON.stringify({ description, repositoryName }))
+    if (branch) {
+      branchName = await askQuestion("New branch name: ")
+    }
+    await writeFile("./build/info.json", JSON.stringify({ description, repositoryName, branchName }))
   }
 
   let project = new Project(repositoryName, description)
