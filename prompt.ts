@@ -20,6 +20,8 @@ Do not use an exit command at the end of the script.
 `;
 
 const changeProjectPrompt = `
+{GIT_HISTORY}
+
 Given the git history above, help me to modify the project in the following manner:
 - {DESCRIPTION}
 
