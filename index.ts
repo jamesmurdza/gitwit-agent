@@ -69,6 +69,9 @@ export class Project {
       model: gptModel,
       user: this.user
     })
+    if (this.completion.error !== undefined) {
+      throw new Error(`OpenAI API Error: ${this.completion.error}`)
+    }
     console.log("Prayers were answered.")
     return this.completion
   }

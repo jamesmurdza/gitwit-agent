@@ -2,7 +2,7 @@ import { Configuration, OpenAIApi } from 'openai'
 
 // OpenAI API:
 
-export type Completion = { text: string; id: string; model: string };
+export type Completion = { text: string; id: string; model: string } | { error: string };
 
 async function simpleOpenAIRequest(prompt: string, config: any): Promise<Completion> {
 
@@ -20,21 +20,28 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
   })
   const openai = new OpenAIApi(configuration)
 
-  let completion = await openai.createChatCompletion({
-    ...config,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  })
-
-  return {
-    text: completion.data.choices[0]!.message!.content,
-    id: completion.data.id,
-    model: completion.data.model
-  };
+  try {
+    let completion = await openai.createChatCompletion({
+      ...config,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    })
+    return {
+      text: completion.data.choices[0]!.message!.content,
+      id: completion.data.id,
+      model: completion.data.model
+    };
+  } catch (error: any) {
+    if (error.response && error.response.status === 400) {
+      return { error: error.response.data.error.message }
+    } else {
+      throw new Error(`Failed to make request. Error message: ${error.message}`);
+    }
+  }
 }
 
 export { simpleOpenAIRequest }
