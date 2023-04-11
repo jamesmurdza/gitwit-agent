@@ -40,30 +40,34 @@ async function waitForStreamEnd(stream: NodeJS.ReadableStream): Promise<void> {
   });
 }
 
-async function runCommandInContainer(container: Docker.Container, command: string[]) {
+async function runCommandInContainer(container: Docker.Container, command: string[], silent: boolean = false): Promise<string> {
   const exec = await container.exec({
     Cmd: command,
     AttachStdout: true,
     AttachStderr: true,
   });
   const stream = await exec.start({ hijack: true, stdin: true });
+  let output = "";
   stream.on('data', (data) => {
-    console.log(`Command output: ${data}`);
+    output += data;
   });
   await waitForStreamEnd(stream);
+  if (!silent) console.log(output);
+  return output;
 }
 
-async function runScriptInContainer(container: Docker.Container, script: string, parameters: { [key: string]: string }) {
+async function runScriptInContainer(container: Docker.Container, script: string, parameters: { [key: string]: string }, silent: boolean = false) {
   // Substitutes values in the template string.
   const replaceParameters = (templateString: string, parameters: { [key: string]: string }): string => {
     return Object.keys(parameters).reduce(
-      (acc, key) => acc.replaceAll(`{${key}}`, parameters[key]),
+      (acc, key) => acc.replaceAll(`{${key}}`, parameters[key] ?? ""),
       templateString
     );
   };
 
   // Run the given script as a bash script.
-  await runCommandInContainer(container, ["bash", "-c", replaceParameters(script, parameters)])
+  const result = await runCommandInContainer(container, ["bash", "-c", replaceParameters(script, parameters)], silent)
+  return result;
 }
 
 async function copyFileToContainer(container: Docker.Container, localFilePath: string, containerFilePath: string) {

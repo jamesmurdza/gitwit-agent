@@ -2,6 +2,7 @@ import * as readline from "readline"
 import * as fs from "fs"
 import { Project } from "./index"
 import { writeFile, readFile } from "fs/promises"
+import * as dotenv from "dotenv"
 
 function askQuestion(query: string): Promise<string> {
   const rl = readline.createInterface({
@@ -25,6 +26,9 @@ function askQuestion(query: string): Promise<string> {
   let again = process.argv.includes("--again") // Use user input from the last run.
   let offline = process.argv.includes("--offline") // Use build script from the last run.
   let debug = process.argv.includes("--debug") // Leave the container running to debug.
+  let branch = process.argv.includes("--branch")
+
+  let account = process.env.GITHUB_ORGNAME || process.env.GITHUB_USERNAME
 
   let description, repositoryName
 
@@ -50,12 +54,14 @@ function askQuestion(query: string): Promise<string> {
     const text = completionFile.toString()
     const { id, model } = JSON.parse(infoFile.toString())
     project.completion = { text, id, model }
-  } else {
-    let { text } = await project.getCompletion()
-    await writeFile("./build/completion.json", text!)
   }
 
-  let { buildScript, buildLog, repositoryURL } = await project.buildAndPush(undefined, debug)
+  await project.buildAndPush(branch, debug)
+
+  if (!offline) {
+    let { text } = project.completion
+    await writeFile("./build/completion.json", text!)
+  }
 })().catch((err) => {
   console.error(err)
   process.exit(1)

@@ -45,4 +45,29 @@ export const PUSH_TO_REPO = `
 git branch -M main
 git remote add origin {REPO_URL}
 git push -u origin main
-`;
+`
+
+// Clone an existing repository.
+export const CLONE_PROJECT_REPO = `
+cd ~
+git clone https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_ACCOUNT}/{REPO_NAME}.git
+cd {REPO_NAME}
+`
+
+// Get the git history of the repository.
+export const GET_GIT_HISTORY = `
+cd ~/{REPO_NAME}
+git log -p -- . ":(exclude)_gitwit/"
+`
+
+// Create a new git branch.
+export const CREATE_NEW_BRANCH = `
+cd ~/{REPO_NAME}
+git branch {BRANCH_NAME}
+git checkout {BRANCH_NAME}
+`
+
+// Push the new branch to the remote repository.
+export const PUSH_BRANCH = `
+git push -u origin {BRANCH_NAME}
+`
