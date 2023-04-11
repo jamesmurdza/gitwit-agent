@@ -44,15 +44,19 @@ export class Project {
   buildScript: string | null = null
   gitHistory: string | null = null
 
-  constructor(name: string, description: string, user?: string, repositoryURL?: string, branchName?: string) {
+  constructor({ name, branchName, user, description }: {
+    name: string,
+    branchName: string,
+    user?: string,
+    description: string
+  }) {
     this.name = name
-    this.branchName = branchName ?? "new-feature"
+    this.branchName = branchName
     this.user = user
     this.description = description
-    this.repositoryURL = repositoryURL
   }
 
-  getCompletion = async (isBranch: boolean = false): Promise<Completion> => {
+  private getCompletion = async (isBranch: boolean): Promise<Completion> => {
     // Generate the build script using ChatGPT.
     const prompt = (isBranch ? changeProjectPrompt : newProjectPrompt)
       .replace("{DESCRIPTION}", this.description)
@@ -69,8 +73,9 @@ export class Project {
     return this.completion
   }
 
-  buildAndPush = async (isBranch: boolean = false, debug: boolean = false) => {
+  buildAndPush = async (debug: boolean = false) => {
 
+    const isBranch = this.branchName !== undefined
     const account = process.env.GITHUB_ORGNAME || process.env.GITHUB_USERNAME
 
     // Build directory
@@ -98,7 +103,7 @@ export class Project {
 
     // If we're creating a new repository, call the OpenAI API already.
     if (!isBranch && !this.completion) {
-      await this.getCompletion(false)
+      await this.getCompletion(isBranch)
     }
 
     // Connect to Docker...
@@ -185,7 +190,7 @@ export class Project {
         parameters, true);
 
       // Now take the git history results and pass it to ChatGPT to get the buid script.
-      await this.getCompletion(true)
+      await this.getCompletion(isBranch)
     }
 
     await writeProjectFile()

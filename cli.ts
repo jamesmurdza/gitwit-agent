@@ -47,7 +47,11 @@ function askQuestion(query: string): Promise<string> {
     await writeFile("./build/info.json", JSON.stringify({ description, repositoryName, branchName }))
   }
 
-  let project = new Project(repositoryName, description)
+  let project = new Project({
+    name: repositoryName,
+    description,
+    branchName
+  })
 
   if (offline) {
     const completionFile = await readFile("./build/completion.json");
@@ -57,7 +61,7 @@ function askQuestion(query: string): Promise<string> {
     project.completion = { text, id, model }
   }
 
-  await project.buildAndPush(branch, debug)
+  await project.buildAndPush(debug)
 
   if (!offline) {
     let { text } = project.completion
