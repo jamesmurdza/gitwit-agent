@@ -236,10 +236,12 @@ export class Project {
       console.log(`Container ${container.id} removed.`)
     }
 
+    const githubURL = this.repositoryURL?.replace(/\.git$/, "")
     return {
       buildScript: this.buildScript,
       buildLog: "",
-      repositoryURL: this.repositoryURL,
+      repositoryURL: githubURL,
+      branchURL: `${githubURL}/tree/${branchName}`,
     }
   }
 }
