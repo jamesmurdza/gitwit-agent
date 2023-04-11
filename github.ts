@@ -100,7 +100,7 @@ async function addGitHubCollaborator(token: string, repoName: string, collaborat
   }
 }
 
-async function getGitHubBranches(token: string, repoName: string) {
+async function getGitHubBranches(token: string, repoName: string): Promise<any[]> {
   // Add collaborator to the repo.
   // Note: Repo name is in the format of "org/repo".
   const requestOptions = {
@@ -113,22 +113,21 @@ async function getGitHubBranches(token: string, repoName: string) {
 
   const response = await fetch(`https://api.github.com/repos/${repoName}/branches`, requestOptions);
   if (response.status === 204) {
-    return true;
+    return [];
   } else {
     const result = await response.json();
     // Print errors if there are any.
     const message = errorMessage(result);
     if (message) {
       throw new Error(message)
-      return false;
     }
-    return result;
+    return <any[]>result;
   }
 }
 
 async function correctBranchName(token: string, repoName: string, branchName: string) {
   const branches = await getGitHubBranches(process.env.GITHUB_TOKEN!, repoName)
-  const branchNames = branches.map((branch: any) => branch.name)
+  const branchNames = branches.map((branch) => branch.name)
   var correctedName = branchName
   while (branchNames.includes(correctedName)) {
     correctedName = incrementName(correctedName)
