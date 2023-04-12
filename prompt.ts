@@ -14,6 +14,8 @@ Assume all commands will be run on a clean \`{BASE_IMAGE}\` system with no packa
 
 Follow each command in the instructions with a git commit command including a detailed commit message. Follow each file change in the instructions with a git commit command including a detailed commit message.
 
+The repository should also contain a helpful README.md file. The README should include a high-level descrition of the code, a list of software needed to run the code, and basic instructions. The README should not include any text or information about a software license. This project has no license.
+
 Do not include any commands to run, start or deploy or test the app.
 
 Do not use an exit command at the end of the script.
