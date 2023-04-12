@@ -41,7 +41,7 @@ async function createGitHubRepo(token: string, name: string, description: string
       },
       body: JSON.stringify({
         name: currentName,
-        description: description,
+        description: description.replace(/\n/g, "").trim().slice(0, 350),
         private: true
       })
     };
