@@ -46,7 +46,7 @@ export class Project {
 
   constructor({ name, branchName, user, description }: {
     name: string,
-    branchName: string,
+    branchName?: string,
     user?: string,
     description: string
   }) {
