@@ -21,7 +21,7 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
   const openai = new OpenAIApi(configuration)
 
   try {
-    let completion = await openai.createChatCompletion({
+    const completion = await openai.createChatCompletion({
       ...config,
       messages: [
         {
@@ -30,17 +30,18 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
         },
       ],
     })
+    // When the API returns an error:
+    if (completion.data.error) {
+      throw new Error(`OpenAI error: (${completion.data.error.type}) ${completion.data.error.message}`)
+    }
     return {
       text: completion.data.choices[0]!.message!.content,
       id: completion.data.id,
       model: completion.data.model
     };
   } catch (error: any) {
-    if (error.response && error.response.status === 400) {
-      return { error: error.response.data.error.message }
-    } else {
-      throw new Error(`Failed to make request. Error message: ${error.message}`);
-    }
+    // When any other error occurs:
+    throw new Error(`Failed to make request. Error message: ${error.message}`);
   }
 }
 
