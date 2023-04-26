@@ -31,8 +31,9 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
       ],
     })
     // When the API returns an error:
-    if (completion.data.error) {
-      throw new Error(`OpenAI error: (${completion.data.error.type}) ${completion.data.error.message}`)
+    const data: any = completion.data;
+    if (data.error) {
+      throw new Error(`OpenAI error: (${data.error.type}) ${data.error.message}`)
     }
     return {
       text: completion.data.choices[0]!.message!.content,
