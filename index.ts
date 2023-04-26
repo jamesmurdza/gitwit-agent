@@ -33,30 +33,59 @@ async function writeFile(path: string, contents: string): Promise<void> {
   console.log(`Wrote ${path}.`)
 }
 
-// Project generation
-export class Project {
-  name: string
-  branchName: string
-  description: string
-  user?: string
-  repositoryURL?: string
-  completion: any | null = null
-  buildScript: string | null = null
-  gitHistory: string | null = null
+type BuildType = "REPOSITORY" | "BRANCH"
+type BuildConstructorProps = {
+  userInput: string,      // User prompt
+  buildType: BuildType,   // Build type
+  suggestedName: string,  // Name of new repository or branch
+  creator: string,        // Username to create the repository with
+  sourceGitURL?: string,  // Repository to branch from
+  organization?: string,  // Oganization to create the repository under
+  collaborator?: string,  // User to add as a collaborator
+}
 
-  constructor({ name, branchName, user, description }: {
-    name: string,
-    branchName?: string,
-    user?: string,
-    description: string
-  }) {
-    this.name = name
-    this.branchName = branchName
-    this.user = user
-    this.description = description
+// Project generation
+export class Build {
+  // Input parameters to create a build:
+  userInput: string
+  isBranch?: boolean = false
+  suggestedName: string
+  sourceGitURL?: string
+  creator: string
+  organization?: string
+  collaborator?: string
+
+  // Generated values:
+  completion?: any
+  gitHistory?: string
+
+  // Output parameters:
+  buildScript?: string
+  buildLog?: string
+  outputGitURL?: string
+  outputHTMLURL?: string
+
+  constructor(props: BuildConstructorProps) {
+    // To create a new project:
+    this.suggestedName = props.suggestedName // The suggested name of the branch
+    this.userInput = props.userInput // The description of the project.
+
+    // The username(s) to create the repository under.
+    this.creator = props.creator
+    this.organization = props.organization
+    this.collaborator = props.collaborator
+
+    // To create a new branch:
+    if (props.buildType === "BRANCH") {
+      if (!props.sourceGitURL) {
+        throw new Error("Source repository is required to make a branch.")
+      }
+      this.isBranch = true
+      this.sourceGitURL = props.sourceGitURL // The source repository URL.
+    }
   }
 
-  private getCompletion = async (isBranch: boolean): Promise<Completion> => {
+  private getCompletion = async (): Promise<Completion> => {
     // Generate the build script using ChatGPT.
 
     const cleanHistory = (history: string) => {
@@ -66,16 +95,17 @@ export class Project {
         .slice(-5000)
     }
 
-    const prompt = (isBranch ? changeProjectPrompt : newProjectPrompt)
-      .replace("{DESCRIPTION}", this.description)
-      .replace("{REPOSITORY_NAME}", this.name)
+    // Prompt to generate the build script.
+    const prompt = (this.isBranch ? changeProjectPrompt : newProjectPrompt)
+      .replace("{DESCRIPTION}", this.userInput)
+      .replace("{REPOSITORY_NAME}", this.suggestedName)
       .replace("{BASE_IMAGE}", baseImage)
       .replace("{GIT_HISTORY}", cleanHistory(this.gitHistory ?? ""))
 
     console.log("Calling on the great machine god...")
     this.completion = await simpleOpenAIRequest(prompt, {
       model: gptModel,
-      user: this.user
+      user: this.collaborator ?? this.creator,
     });
 
     console.log("Prayers were answered.")
@@ -85,12 +115,13 @@ export class Project {
 
   buildAndPush = async (debug: boolean = false) => {
 
-    const isBranch = this.branchName !== undefined
-    const account = process.env.GITHUB_ORGNAME || process.env.GITHUB_USERNAME
-
     // Build directory
     const buildDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gitwit-")) + "/"
     console.log(`Created temporary directory: ${buildDirectory}`)
+
+    // Get the name of the source repository as username/reponame.
+    const regex = /\/\/github\.com\/([\w-]+)\/([\w-]+)\.git/
+    const [, sourceRepositoryUser, sourceRepositoryName] = this.sourceGitURL?.match(regex) ?? []
 
     // Intermediate build products.
     const buildScriptPath = buildDirectory + "build.sh"
@@ -99,21 +130,21 @@ export class Project {
     const writeProjectFile = async () => {
       // Generate the project metadata file.
       const projectInfo = {
-        repositoryName: this.name,
-        description: this.description,
+        sourceGitURL: this.sourceGitURL,
+        outputGitURL: this.outputGitURL,
+        description: this.userInput,
         generator: "GitWit",
         generatorVersion: packageInfo.version,
         gptModel: this.completion.model,
         completionId: this.completion.id,
-        repositoryURL: this.repositoryURL,
         dateCreated: new Date().toISOString(),
       }
       await writeFile(projectFilePath, JSON.stringify(projectInfo, null, "\t"))
     };
 
     // If we're creating a new repository, call the OpenAI API already.
-    if (!isBranch && !this.completion) {
-      await this.getCompletion(isBranch)
+    if (!this.isBranch && !this.completion) {
+      await this.getCompletion()
     }
 
     // Connect to Docker...
@@ -133,48 +164,61 @@ export class Project {
       protocol: process.env.DOCKER_API_KEY ? 'https' : undefined,
     })
 
-    if (isBranch) {
-      this.repositoryURL = `https://github.com/${account}/${this.name}.git`
-      console.log(`Using repository: ${this.repositoryURL}`)
-    } else {
-      // Create the GitHub repository.
-      const repo: any = await createGitHubRepo(
+    var repositoryName, branchName;
+
+    if (this.isBranch) {
+      // Use the provided repository.
+      repositoryName = sourceRepositoryName;
+      console.log(`Using repository: ${this.sourceGitURL}`)
+
+      // Find an available branch name.
+      branchName = await correctBranchName(
         process.env.GITHUB_TOKEN!,
-        this.name,
-        this.description,
-        process.env.GITHUB_ORGNAME
+        `${sourceRepositoryUser}/${sourceRepositoryName}`,
+        this.suggestedName!
       )
-      console.log(`Created repository: ${repo.html_url}`)
+      this.outputGitURL = this.sourceGitURL;
+      const sourceHTMLRoot = this.sourceGitURL?.replace(".git", "");
+      this.outputHTMLURL = `${sourceHTMLRoot}/tree/${branchName}`;
+      console.log(`Creating branch: ${branchName}`)
+    } else {
+
+      // Create a new GitHub repository.
+      const newRepository: any = await createGitHubRepo(
+        process.env.GITHUB_TOKEN!,
+        this.suggestedName,
+        this.userInput,
+        this.organization ?? this.creator
+      )
+      this.outputGitURL = newRepository.clone_url
+      this.outputHTMLURL = newRepository.html_url
+      repositoryName = newRepository.name
+      console.log(`Created repository: ${newRepository.html_url}`)
+
       // Add the user as a collaborator on the GitHub repository.
-      if (repo.full_name && this.user) {
-        const result = this.user ? await addGitHubCollaborator(
+      if (newRepository.full_name && this.collaborator) {
+        const result = this.collaborator ? await addGitHubCollaborator(
           process.env.GITHUB_TOKEN!,
-          repo.full_name,
-          this.user!
+          newRepository.full_name,
+          this.collaborator!
         ) : null
-        console.log(`Added ${this.user} to ${repo.full_name}.`)
+        console.log(`Added ${this.collaborator} to ${newRepository.full_name}.`)
       }
-      this.repositoryURL = repo.clone_url
     }
 
-    const branchName = isBranch ? await correctBranchName(
-      process.env.GITHUB_TOKEN!,
-      `${account}/${this.name}`,
-      this.branchName
-    ) : "main"
-
     // Define the parameters used by the scripts.
-    const parameters = {
-      REPO_NAME: this.name,
-      REPO_DESCRIPTION: this.description,
-      REPO_URL: this.repositoryURL!,
+    let parameters = {
+      REPO_NAME: repositoryName,
+      FULL_REPO_NAME: `${sourceRepositoryUser}/${sourceRepositoryName}`,
+      PUSH_URL: this.outputGitURL!,
+      REPO_DESCRIPTION: this.userInput!,
       GIT_AUTHOR_EMAIL: process.env.GIT_AUTHOR_EMAIL!,
       GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME!,
       GITHUB_USERNAME: process.env.GITHUB_USERNAME!,
       GITHUB_TOKEN: process.env.GITHUB_TOKEN!,
       GITWIT_VERSION: packageInfo.version,
-      BRANCH_NAME: branchName,
-      GITHUB_ACCOUNT: account!,
+      BRANCH_NAME: branchName ?? "",
+      GITHUB_ACCOUNT: this.creator,
       GIT_HISTORY: this.gitHistory ?? "",
     }
 
@@ -190,7 +234,7 @@ export class Project {
     await runCommandInContainer(container, ["mkdir", containerHome])
 
     // These scripts are appended together to maintain the current directory.
-    if (isBranch) {
+    if (this.isBranch) {
       await runScriptInContainer(container,
         scripts.SETUP_GIT_CONFIG +  // Setup the git commit author
         scripts.CLONE_PROJECT_REPO,
@@ -201,7 +245,7 @@ export class Project {
         parameters, true);
 
       // Now take the git history results and pass it to ChatGPT to get the buid script.
-      await this.getCompletion(isBranch)
+      await this.getCompletion()
     }
 
     await writeProjectFile()
@@ -212,7 +256,7 @@ export class Project {
     await writeFile(buildScriptPath, this.buildScript)
     await copyFileToContainer(container, buildScriptPath, containerHome)
 
-    if (isBranch) {
+    if (this.isBranch) {
       // Run the build script on a new branch, and push it to GitHub.
       await runScriptInContainer(container,
         scripts.CREATE_NEW_BRANCH +
@@ -252,13 +296,11 @@ export class Project {
       console.log(`Container ${container.id} removed.`)
     }
 
-    const githubURL = this.repositoryURL?.replace(/\.git$/, "")
     return {
+      outputGitURL: this.outputGitURL,
+      outputHTMLURL: this.outputHTMLURL,
       buildScript: this.buildScript,
-      buildLog: "",
-      repositoryURL: githubURL,
-      branchURL: branchName ? `${githubURL}/tree/${branchName}` : githubURL,
-      repositoryName: this.name,
+      buildLog: this.buildLog,
     }
   }
 }

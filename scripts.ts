@@ -43,14 +43,14 @@ git config --global credential.helper store
 // Push the main branch to the remote repository.
 export const PUSH_TO_REPO = `
 git branch -M main
-git remote add origin {REPO_URL}
+git remote add origin {PUSH_URL}
 git push -u origin main
 `
 
 // Clone an existing repository.
 export const CLONE_PROJECT_REPO = `
 cd ~
-git clone https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_ACCOUNT}/{REPO_NAME}.git
+git clone https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{FULL_REPO_NAME}.git
 cd {REPO_NAME}
 `
 
