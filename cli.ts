@@ -1,8 +1,7 @@
 import * as readline from "readline"
 import * as fs from "fs"
-import { Project } from "./index"
+import { Build } from "./index"
 import { writeFile, readFile } from "fs/promises"
-import * as dotenv from "dotenv"
 
 function askQuestion(query: string): Promise<string> {
   const rl = readline.createInterface({
@@ -28,29 +27,32 @@ function askQuestion(query: string): Promise<string> {
   const debug = process.argv.includes("--debug") // Leave the container running to debug.
   const branch = process.argv.includes("--branch")
 
-  let description, repositoryName, branchName
+  let userInput, suggestedName, sourceGitURL
 
   // Detect metadata from a previous run.
   if (offline || again) {
-    ({ description, repositoryName, branchName } = JSON.parse(
+    ({ userInput, suggestedName, sourceGitURL } = JSON.parse(
       (await readFile("./build/info.json")).toString()
     ))
   }
 
-  if (!description || !repositoryName) {
-    console.log("Let's cook up a new project!")
-    description = await askQuestion("What would you like to make? ")
-    repositoryName = await askQuestion("Repository name: ")
+  if (!userInput || !suggestedName) {
     if (branch) {
-      branchName = await askQuestion("New branch name: ")
+      sourceGitURL = await askQuestion("Source repository URL: ")
+    } else {
+      console.log("Let's cook up a new project!")
     }
-    await writeFile("./build/info.json", JSON.stringify({ description, repositoryName, branchName }))
+    userInput = await askQuestion("What would you like to make? ")
+    suggestedName = await askQuestion(branch ? "New branch name:" : "Repository name: ")
+    await writeFile("./build/info.json", JSON.stringify({ userInput, suggestedName, sourceGitURL }))
   }
 
-  let project = new Project({
-    name: repositoryName,
-    description,
-    branchName
+  let project = new Build({
+    buildType: branch ? "BRANCH" : "REPOSITORY",
+    suggestedName,
+    userInput,
+    creator: process.env.GITHUB_USERNAME!,
+    sourceGitURL
   })
 
   if (offline) {
