@@ -63,8 +63,8 @@ git log -p -- . ":(exclude)_gitwit/:(exclude)package-lock.json"
 // Create a new git branch.
 export const CREATE_NEW_BRANCH = `
 cd ~/{REPO_NAME}
-git branch {BRANCH_NAME}
-git checkout {BRANCH_NAME}
+git checkout {SOURCE_BRANCH_NAME}
+git checkout -b {BRANCH_NAME}
 `
 
 // Push the new branch to the remote repository.

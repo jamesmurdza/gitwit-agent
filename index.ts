@@ -40,6 +40,7 @@ type BuildConstructorProps = {
   suggestedName: string,  // Name of new repository or branch
   creator: string,        // Username to create the repository with
   sourceGitURL?: string,  // Repository to branch from
+  sourceBranch?: string,  // Branch to branch from
   organization?: string,  // Oganization to create the repository under
   collaborator?: string,  // User to add as a collaborator
 }
@@ -51,6 +52,7 @@ export class Build {
   isBranch?: boolean = false
   suggestedName: string
   sourceGitURL?: string
+  sourceBranch?: string
   creator: string
   organization?: string
   collaborator?: string
@@ -82,6 +84,7 @@ export class Build {
       }
       this.isBranch = true
       this.sourceGitURL = props.sourceGitURL // The source repository URL.
+      this.sourceBranch = props.sourceBranch // The source branch name.
     }
   }
 
@@ -218,6 +221,7 @@ export class Build {
       GITHUB_TOKEN: process.env.GITHUB_TOKEN!,
       GITWIT_VERSION: packageInfo.version,
       BRANCH_NAME: branchName ?? "",
+      SOURCE_BRANCH_NAME: this.sourceBranch ?? "",
       GITHUB_ACCOUNT: this.creator,
       GIT_HISTORY: this.gitHistory ?? "",
     }
