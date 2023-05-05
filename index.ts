@@ -26,6 +26,7 @@ const containerHome = "/app/"
 
 // OpenAI constants:
 const gptModel = "gpt-3.5-turbo"
+const temperature = 0.2
 
 // Reading and writing files:
 async function writeFile(path: string, contents: string): Promise<void> {
@@ -109,6 +110,7 @@ export class Build {
     this.completion = await simpleOpenAIRequest(prompt, {
       model: gptModel,
       user: this.collaborator ?? this.creator,
+      temperature: temperature
     });
 
     console.log("Prayers were answered.")
