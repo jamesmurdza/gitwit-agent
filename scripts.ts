@@ -22,16 +22,8 @@ export const CD_GIT_ROOT = `
 cd $(git rev-parse --show-toplevel)
 `
 
-// Add and commit the build logs to the git repository.
-export const ADD_BUILD_LOGS = `
-mkdir _gitwit
-cp /app/build.sh ./_gitwit/build.sh
-git add -f ./_gitwit/build.sh
-cp /app/build.log ./_gitwit/build.log
-git add -f ./_gitwit/build.log
-cp /app/info.json ./_gitwit/info.json
-git add -f ./_gitwit/info.json
-git commit -m "Finished code generation, adding logs"
+export const GET_BUILD_LOG = `
+cat /app/build.log
 `
 
 // Configure the git credentials.

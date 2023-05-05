@@ -128,24 +128,8 @@ export class Build {
     const regex = /\/\/github\.com\/([\w-]+)\/([\w-]+)\.git/
     const [, sourceRepositoryUser, sourceRepositoryName] = this.sourceGitURL?.match(regex) ?? []
 
-    // Intermediate build products.
+    // Intermediate build script.
     const buildScriptPath = buildDirectory + "build.sh"
-    const projectFilePath = buildDirectory + "info.json"
-
-    const writeProjectFile = async () => {
-      // Generate the project metadata file.
-      const projectInfo = {
-        sourceGitURL: this.sourceGitURL,
-        outputGitURL: this.outputGitURL,
-        description: this.userInput,
-        generator: "GitWit",
-        generatorVersion: packageInfo.version,
-        gptModel: this.completion.model,
-        completionId: this.completion.id,
-        dateCreated: new Date().toISOString(),
-      }
-      await writeFile(projectFilePath, JSON.stringify(projectInfo, null, "\t"))
-    };
 
     // If we're creating a new repository, call the OpenAI API already.
     if (!this.isBranch && !this.completion) {
@@ -254,9 +238,6 @@ export class Build {
       await this.getCompletion()
     }
 
-    await writeProjectFile()
-    await copyFileToContainer(container, projectFilePath, containerHome)
-
     // Generate the build script from the OpenAI completion.
     this.buildScript = applyCorrections(this.completion.text.trim())
     await writeFile(buildScriptPath, this.buildScript)
@@ -268,7 +249,6 @@ export class Build {
         scripts.CREATE_NEW_BRANCH +
         scripts.RUN_BUILD_SCRIPT +
         scripts.CD_GIT_ROOT +
-        scripts.ADD_BUILD_LOGS +
         scripts.SETUP_GIT_CREDENTIALS +
         scripts.PUSH_BRANCH,
         parameters)
@@ -279,11 +259,14 @@ export class Build {
         scripts.MAKE_PROJECT_DIR +
         scripts.RUN_BUILD_SCRIPT +
         scripts.CD_GIT_ROOT +
-        scripts.ADD_BUILD_LOGS +
         scripts.SETUP_GIT_CREDENTIALS +
         scripts.PUSH_TO_REPO,
         parameters)
     }
+
+    this.buildLog = await runScriptInContainer(container,
+      scripts.GET_BUILD_LOG,
+      parameters, true);
 
     if (debug) {
       // This is how we can debug the build script interactively.
@@ -307,6 +290,9 @@ export class Build {
       outputHTMLURL: this.outputHTMLURL,
       buildScript: this.buildScript,
       buildLog: this.buildLog,
+      completionId: this.completion.id,
+      gptModel: this.completion.model,
+      gitwitVersion: packageInfo.version,
     }
   }
 }
