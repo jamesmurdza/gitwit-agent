@@ -9,7 +9,8 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
   const baseOptions = process.env.OPENAI_CACHE_ENABLED ? {
     headers: {
       "Helicone-Cache-Enabled": "true",
-      "Helicone-Cache-Bucket-Max-Size": "1"
+      "Helicone-Cache-Bucket-Max-Size": "1",
+      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
     },
   } : {};
 
