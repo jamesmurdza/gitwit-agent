@@ -6,13 +6,15 @@ export type Completion = { text: string; id: string; model: string } | { error: 
 
 async function simpleOpenAIRequest(prompt: string, config: any): Promise<Completion> {
 
-  const baseOptions = process.env.OPENAI_CACHE_ENABLED ? {
+  const baseOptions = {
     headers: {
-      "Helicone-Cache-Enabled": "true",
-      "Helicone-Cache-Bucket-Max-Size": "1",
       "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+      ...(process.env.OPENAI_CACHE_ENABLED && {
+        "Helicone-Cache-Enabled": "true",
+        "Helicone-Cache-Bucket-Max-Size": "1",
+      }),
     },
-  } : {};
+  };
 
   const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
