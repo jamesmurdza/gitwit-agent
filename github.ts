@@ -24,7 +24,16 @@ function incrementName(name: string) {
   }
 }
 
-async function createGitHubRepo(token: string, name: string, description: string, org?: string, attempts: number = 10) {
+interface GitHubRepoOptions {
+  token: string;
+  name: string;
+  description: string;
+  org?: string;
+  template?: { repository: string, owner: string }
+  attempts?: number;
+}
+
+async function createGitHubRepo({ token, name, description, org, template, attempts = 10 }: GitHubRepoOptions) {
   let failedAttempts = 0;
   let currentName = name;
   let result: any = {};
@@ -42,14 +51,20 @@ async function createGitHubRepo(token: string, name: string, description: string
       body: JSON.stringify({
         name: currentName,
         description: description.replace(/\n/g, "").trim().slice(0, 350),
-        private: true
+        private: true,
+        // If generating from a template and owner is an organization, specify the owner.
+        ...(template && org && { owner: org })
       })
     };
 
     // Create the repo at username/repo or org/repo.
-    const response = org
-      ? await fetch(`https://api.github.com/orgs/${org}/repos`, requestOptions)
-      : await fetch('https://api.github.com/user/repos', requestOptions);
+    const response = template
+      // Generate from a template repository:
+      ? await fetch(`https://api.github.com/repos/${template.owner}/${template.repository}/generate`, requestOptions)
+      // Create a new repository:
+      : org
+        ? await fetch(`https://api.github.com/orgs/${org}/repos`, requestOptions)
+        : await fetch('https://api.github.com/user/repos', requestOptions);
     result = await response.json() ?? {};
 
     // If the repo already exists, add a number to the end of the name.

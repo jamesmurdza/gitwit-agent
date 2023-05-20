@@ -34,7 +34,7 @@ async function writeFile(path: string, contents: string): Promise<void> {
   console.log(`Wrote ${path}.`)
 }
 
-type BuildType = "REPOSITORY" | "BRANCH"
+type BuildType = "REPOSITORY" | "BRANCH" | "TEMPLATE"
 type BuildConstructorProps = {
   userInput: string,      // User prompt
   buildType: BuildType,   // Build type
@@ -51,6 +51,7 @@ export class Build {
   // Input parameters to create a build:
   userInput: string
   isBranch?: boolean = false
+  isCopy?: boolean = false
   suggestedName: string
   sourceGitURL?: string
   sourceBranch?: string
@@ -78,19 +79,27 @@ export class Build {
     this.organization = props.organization
     this.collaborator = props.collaborator
 
-    // To create a new branch:
-    if (props.buildType === "BRANCH") {
+    // To create a new branch or fork:
+    this.isBranch = props.buildType === "BRANCH"
+    this.isCopy = props.buildType === "TEMPLATE"
+
+    if (this.isBranch || this.isCopy) {
       if (!props.sourceGitURL) {
         throw new Error("Source repository is required to make a branch.")
       }
-      this.isBranch = true
       this.sourceGitURL = props.sourceGitURL // The source repository URL.
       this.sourceBranch = props.sourceBranch // The source branch name.
     }
+
   }
 
-  private getCompletion = async (): Promise<Completion> => {
+  private getCompletion = async (): Promise<Completion | undefined> => {
     // Generate the build script using ChatGPT.
+
+    if (this.isCopy) {
+      // Don't use ChatGPT if we're generating a repository from a template.
+      return;
+    }
 
     const cleanHistory = (history: string) => {
       return history
@@ -132,28 +141,11 @@ export class Build {
     const buildScriptPath = buildDirectory + "build.sh"
 
     // If we're creating a new repository, call the OpenAI API already.
-    if (!this.isBranch && !this.completion) {
+    if (!this.isBranch && !this.isCopy && !this.completion) {
       await this.getCompletion()
     }
 
-    // Connect to Docker...
-    console.log(
-      "Connecting to Docker on "
-      + (process.env.DOCKER_API_HOST ?? "localhost")
-      + (process.env.DOCKER_API_PORT ? `:${process.env.DOCKER_API_PORT}` : "")
-    );
-    const docker = new Docker({
-      host: process.env.DOCKER_API_HOST,
-      port: process.env.DOCKER_API_PORT,
-      // Flightcontrol doesn't support environment variables with newlines.
-      ca: process.env.DOCKER_API_CA?.replace(/\\n/g, "\n"),
-      cert: process.env.DOCKER_API_CERT?.replace(/\\n/g, "\n"),
-      key: process.env.DOCKER_API_KEY?.replace(/\\n/g, "\n"),
-      // We use HTTPS when there is an SSL key.
-      protocol: process.env.DOCKER_API_KEY ? 'https' : undefined,
-    })
-
-    var repositoryName, branchName;
+    let repositoryName, branchName;
 
     if (this.isBranch) {
       // Use the provided repository.
@@ -173,12 +165,16 @@ export class Build {
     } else {
 
       // Create a new GitHub repository.
-      const newRepository: any = await createGitHubRepo(
-        process.env.GITHUB_TOKEN!,
-        this.suggestedName,
-        this.userInput,
-        this.organization ?? this.creator
-      )
+      const template = { owner: sourceRepositoryUser, repository: sourceRepositoryName };
+      const templateOptions = this.isCopy ? { template } : undefined
+      const newRepository: any = await createGitHubRepo({
+        token: process.env.GITHUB_TOKEN!,
+        name: this.suggestedName,
+        org: this.organization ?? this.creator,
+        description: this.userInput,
+        ...templateOptions
+      });
+
       this.outputGitURL = newRepository.clone_url
       this.outputHTMLURL = newRepository.html_url
       repositoryName = newRepository.name
@@ -195,94 +191,113 @@ export class Build {
       }
     }
 
-    // Define the parameters used by the scripts.
-    let parameters = {
-      REPO_NAME: repositoryName,
-      FULL_REPO_NAME: `${sourceRepositoryUser}/${sourceRepositoryName}`,
-      PUSH_URL: this.outputGitURL!,
-      REPO_DESCRIPTION: this.userInput!,
-      GIT_AUTHOR_EMAIL: process.env.GIT_AUTHOR_EMAIL!,
-      GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME!,
-      GITHUB_USERNAME: process.env.GITHUB_USERNAME!,
-      GITHUB_TOKEN: process.env.GITHUB_TOKEN!,
-      GITWIT_VERSION: packageInfo.version,
-      BRANCH_NAME: branchName ?? "",
-      SOURCE_BRANCH_NAME: this.sourceBranch ?? "",
-      GITHUB_ACCOUNT: this.creator,
-      GIT_HISTORY: this.gitHistory ?? "",
-    }
+    if (!this.isCopy) {
+      // Define the parameters used by the scripts.
+      let parameters = {
+        REPO_NAME: repositoryName,
+        FULL_REPO_NAME: `${sourceRepositoryUser}/${sourceRepositoryName}`,
+        PUSH_URL: this.outputGitURL!,
+        REPO_DESCRIPTION: this.userInput!,
+        GIT_AUTHOR_EMAIL: process.env.GIT_AUTHOR_EMAIL!,
+        GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME!,
+        GITHUB_USERNAME: process.env.GITHUB_USERNAME!,
+        GITHUB_TOKEN: process.env.GITHUB_TOKEN!,
+        GITWIT_VERSION: packageInfo.version,
+        BRANCH_NAME: branchName ?? "",
+        SOURCE_BRANCH_NAME: this.sourceBranch ?? "",
+        GITHUB_ACCOUNT: this.creator,
+        GIT_HISTORY: this.gitHistory ?? "",
+      }
 
-    // Create a new docker container.
-    const container = await createContainer(docker, baseImage)
-    console.log(`Container ${container.id} created.`)
+      // Connect to Docker...
+      console.log(
+        "Connecting to Docker on "
+        + (process.env.DOCKER_API_HOST ?? "localhost")
+        + (process.env.DOCKER_API_PORT ? `:${process.env.DOCKER_API_PORT}` : "")
+      );
+      const docker = new Docker({
+        host: process.env.DOCKER_API_HOST,
+        port: process.env.DOCKER_API_PORT,
+        // Flightcontrol doesn't support environment variables with newlines.
+        ca: process.env.DOCKER_API_CA?.replace(/\\n/g, "\n"),
+        cert: process.env.DOCKER_API_CERT?.replace(/\\n/g, "\n"),
+        key: process.env.DOCKER_API_KEY?.replace(/\\n/g, "\n"),
+        // We use HTTPS when there is an SSL key.
+        protocol: process.env.DOCKER_API_KEY ? 'https' : undefined,
+      })
 
-    // Start the container.
-    await startContainer(container)
-    console.log(`Container ${container.id} started.`)
+      // Create a new docker container.
+      const container = await createContainer(docker, baseImage)
+      console.log(`Container ${container.id} created.`)
 
-    // Copy the metadata file to the container.
-    await runCommandInContainer(container, ["mkdir", containerHome])
+      // Start the container.
+      await startContainer(container)
+      console.log(`Container ${container.id} started.`)
 
-    // These scripts are appended together to maintain the current directory.
-    if (this.isBranch) {
-      await runScriptInContainer(container,
-        scripts.SETUP_GIT_CONFIG +  // Setup the git commit author
-        scripts.CLONE_PROJECT_REPO,
-        parameters);
+      // Copy the metadata file to the container.
+      await runCommandInContainer(container, ["mkdir", containerHome])
 
-      this.gitHistory = await runScriptInContainer(container,
-        scripts.GET_GIT_HISTORY,
+      // These scripts are appended together to maintain the current directory.
+      if (this.isBranch) {
+        await runScriptInContainer(container,
+          scripts.SETUP_GIT_CONFIG +  // Setup the git commit author
+          scripts.CLONE_PROJECT_REPO,
+          parameters);
+
+        this.gitHistory = await runScriptInContainer(container,
+          scripts.GET_GIT_HISTORY,
+          parameters, true);
+
+        // Now take the git history results and pass it to ChatGPT to get the buid script.
+        await this.getCompletion()
+      }
+
+      // Generate the build script from the OpenAI completion.
+      this.buildScript = applyCorrections(this.completion.text.trim())
+      await writeFile(buildScriptPath, this.buildScript)
+      await copyFileToContainer(container, buildScriptPath, containerHome)
+
+      if (this.isBranch) {
+        // Run the build script on a new branch, and push it to GitHub.
+        await runScriptInContainer(container,
+          scripts.CREATE_NEW_BRANCH +
+          scripts.RUN_BUILD_SCRIPT +
+          scripts.CD_GIT_ROOT +
+          scripts.SETUP_GIT_CREDENTIALS +
+          scripts.PUSH_BRANCH,
+          parameters)
+      } else {
+        await runScriptInContainer(container,
+          // Run the build script in an empty directory, and push the results to GitHub.
+          scripts.SETUP_GIT_CONFIG +
+          scripts.MAKE_PROJECT_DIR +
+          scripts.RUN_BUILD_SCRIPT +
+          scripts.CD_GIT_ROOT +
+          scripts.SETUP_GIT_CREDENTIALS +
+          scripts.PUSH_TO_REPO,
+          parameters)
+      }
+
+      this.buildLog = await runScriptInContainer(container,
+        scripts.GET_BUILD_LOG,
         parameters, true);
 
-      // Now take the git history results and pass it to ChatGPT to get the buid script.
-      await this.getCompletion()
-    }
-
-    // Generate the build script from the OpenAI completion.
-    this.buildScript = applyCorrections(this.completion.text.trim())
-    await writeFile(buildScriptPath, this.buildScript)
-    await copyFileToContainer(container, buildScriptPath, containerHome)
-
-    if (this.isBranch) {
-      // Run the build script on a new branch, and push it to GitHub.
-      await runScriptInContainer(container,
-        scripts.CREATE_NEW_BRANCH +
-        scripts.RUN_BUILD_SCRIPT +
-        scripts.CD_GIT_ROOT +
-        scripts.SETUP_GIT_CREDENTIALS +
-        scripts.PUSH_BRANCH,
-        parameters)
-    } else {
-      await runScriptInContainer(container,
-        // Run the build script in an empty directory, and push the results to GitHub.
-        scripts.SETUP_GIT_CONFIG +
-        scripts.MAKE_PROJECT_DIR +
-        scripts.RUN_BUILD_SCRIPT +
-        scripts.CD_GIT_ROOT +
-        scripts.SETUP_GIT_CREDENTIALS +
-        scripts.PUSH_TO_REPO,
-        parameters)
-    }
-
-    this.buildLog = await runScriptInContainer(container,
-      scripts.GET_BUILD_LOG,
-      parameters, true);
-
-    if (debug) {
-      // This is how we can debug the build script interactively.
-      console.log("The container is still running!")
-      console.log("To debug, run:")
-      console.log("-----")
-      console.log(`docker exec -it ${container.id} bash`)
-      console.log("-----")
-      // If we don't this, the process won't end because the container is running.
-      process.exit()
-    } else {
-      // Stop and remove the container.
-      await container.stop()
-      console.log(`Container ${container.id} stopped.`)
-      await container.remove()
-      console.log(`Container ${container.id} removed.`)
+      if (debug) {
+        // This is how we can debug the build script interactively.
+        console.log("The container is still running!")
+        console.log("To debug, run:")
+        console.log("-----")
+        console.log(`docker exec -it ${container.id} bash`)
+        console.log("-----")
+        // If we don't this, the process won't end because the container is running.
+        process.exit()
+      } else {
+        // Stop and remove the container.
+        await container.stop()
+        console.log(`Container ${container.id} stopped.`)
+        await container.remove()
+        console.log(`Container ${container.id} removed.`)
+      }
     }
 
     return {
@@ -290,8 +305,8 @@ export class Build {
       outputHTMLURL: this.outputHTMLURL,
       buildScript: this.buildScript,
       buildLog: this.buildLog,
-      completionId: this.completion.id,
-      gptModel: this.completion.model,
+      completionId: this.completion?.id,
+      gptModel: this.completion?.model,
       gitwitVersion: packageInfo.version,
     }
   }
