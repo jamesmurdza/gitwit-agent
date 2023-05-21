@@ -165,7 +165,7 @@ export class Build {
     } else {
 
       // Create a new GitHub repository.
-      const template = { owner: sourceRepositoryUser, repository: sourceRepositoryName };
+      const template = { owner: sourceRepositoryUser!, repository: sourceRepositoryName! };
       const templateOptions = this.isCopy ? { template } : undefined
       const newRepository: any = await createGitHubRepo({
         token: process.env.GITHUB_TOKEN!,
