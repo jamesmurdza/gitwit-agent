@@ -13,7 +13,7 @@ function applyCorrections(buildScript: string) {
     .replace(/^npm install /mg, 'npm install --package-lock-only ')
     .replace(echoRedirection, 'mkdir -p $<DIRECTORY> && $1')
     .replace(echoRedirectionSingleQuote, 'mkdir -p $<DIRECTORY> && $1')
-    .replace(/^git (remote|push|checkout|merge|branch) .*$/mg, '')
+    .replace(/^git (init|remote|push|checkout|merge|branch) .*$/mg, '')
     .replace(/^(az|aws|systemctl) .*$/mg, '')
     .replace(/^git commit (.*)$/mg, 'git commit -a $1');
 }
