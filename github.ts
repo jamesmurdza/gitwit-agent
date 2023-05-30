@@ -68,7 +68,10 @@ async function createGitHubRepo({ token, name, description, org, template, attem
     result = await response.json() ?? {};
 
     // If the repo already exists, add a number to the end of the name.
-    if (result.errors && result.errors[0].field === "name") {
+    const alreadyExists = (errors: any) => errors
+      && errors[0].field === "name" // When creating a new repository.
+      || errors[0].includes("already exists") // When generating from a template.
+    if (result.errors && alreadyExists(result.errors)) {
       console.log(`Repository name already exists. Trying ${currentName}.`)
       failedAttempts++
       currentName = incrementName(currentName);
