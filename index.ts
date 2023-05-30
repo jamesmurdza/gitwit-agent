@@ -131,6 +131,20 @@ export class Build {
     debug = false,
     onFinished = async ({ }) => { }
   } = {}) => {
+
+    // This will be called when the build is finished.
+    const runFinishedCallback = async () => {
+      await onFinished({
+        outputGitURL: this.outputGitURL,
+        outputHTMLURL: this.outputHTMLURL,
+        buildScript: this.buildScript,
+        buildLog: this.buildLog,
+        completionId: this.completion?.id,
+        gptModel: this.completion?.model,
+        gitwitVersion: packageInfo.version,
+      })
+    }
+
     // Build directory
     const buildDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gitwit-")) + "/"
     console.log(`Created temporary directory: ${buildDirectory}`)
@@ -193,7 +207,9 @@ export class Build {
       }
     }
 
-    if (!this.isCopy) {
+    if (this.isCopy) {
+      await runFinishedCallback();
+    } else {
       // Define the parameters used by the scripts.
       let parameters = {
         REPO_NAME: repositoryName,
@@ -284,15 +300,7 @@ export class Build {
         scripts.GET_BUILD_LOG,
         parameters, true);
 
-      await onFinished({
-        outputGitURL: this.outputGitURL,
-        outputHTMLURL: this.outputHTMLURL,
-        buildScript: this.buildScript,
-        buildLog: this.buildLog,
-        completionId: this.completion?.id,
-        gptModel: this.completion?.model,
-        gitwitVersion: packageInfo.version,
-      })
+      await runFinishedCallback();
 
       if (debug) {
         // This is how we can debug the build script interactively.
