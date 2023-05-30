@@ -127,8 +127,10 @@ export class Build {
     return this.completion
   }
 
-  buildAndPush = async (debug: boolean = false) => {
-
+  buildAndPush = async ({
+    debug = false,
+    onFinished = async ({ }) => { }
+  } = {}) => {
     // Build directory
     const buildDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gitwit-")) + "/"
     console.log(`Created temporary directory: ${buildDirectory}`)
@@ -282,6 +284,16 @@ export class Build {
         scripts.GET_BUILD_LOG,
         parameters, true);
 
+      await onFinished({
+        outputGitURL: this.outputGitURL,
+        outputHTMLURL: this.outputHTMLURL,
+        buildScript: this.buildScript,
+        buildLog: this.buildLog,
+        completionId: this.completion?.id,
+        gptModel: this.completion?.model,
+        gitwitVersion: packageInfo.version,
+      })
+
       if (debug) {
         // This is how we can debug the build script interactively.
         console.log("The container is still running!")
@@ -298,16 +310,6 @@ export class Build {
         await container.remove()
         console.log(`Container ${container.id} removed.`)
       }
-    }
-
-    return {
-      outputGitURL: this.outputGitURL,
-      outputHTMLURL: this.outputHTMLURL,
-      buildScript: this.buildScript,
-      buildLog: this.buildLog,
-      completionId: this.completion?.id,
-      gptModel: this.completion?.model,
-      gitwitVersion: packageInfo.version,
     }
   }
 }

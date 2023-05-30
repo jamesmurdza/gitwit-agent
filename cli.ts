@@ -63,7 +63,7 @@ function askQuestion(query: string): Promise<string> {
     project.completion = { text, id, model }
   }
 
-  await project.buildAndPush(debug)
+  await project.buildAndPush({ debug })
 
   if (!offline) {
     let { text } = project.completion
