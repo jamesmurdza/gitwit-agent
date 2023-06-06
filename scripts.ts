@@ -46,10 +46,10 @@ git clone https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{FULL_REPO_NAME}.g
 cd {REPO_NAME}
 `
 
-// Get the git history of the repository.
-export const GET_GIT_HISTORY = `
+// Get the contents of the repository.
+export const GET_FILE_LIST = `
 cd ~/{REPO_NAME}
-git log -p -- . ":(exclude)_gitwit/" ":(exclude)package-lock.json" ":(exclude)*.svg"
+find . -path "./.git" -prune -o -type f -print
 `
 
 // Create a new git branch.

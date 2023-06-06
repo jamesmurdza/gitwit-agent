@@ -11,12 +11,14 @@ import {
   runCommandInContainer,
   runScriptInContainer,
   copyFileToContainer,
+  readFileFromContainer
 } from "./container"
 import { simpleOpenAIRequest, Completion } from "./openai"
 import { applyCorrections } from "./corrections"
-import { newProjectPrompt, changeProjectPrompt } from "./prompt"
+import { newProjectPrompt, changeProjectPrompt, planChangesPrompt } from "./prompt"
 import { createGitHubRepo, addGitHubCollaborator, correctBranchName } from "./github"
 import * as scripts from "./scripts"
+import { BuildPlan } from "./buildPlan"
 
 dotenv.config()
 
@@ -27,11 +29,12 @@ const containerHome = "/app/"
 // OpenAI constants:
 const gptModel = "gpt-3.5-turbo"
 const temperature = 0.2
+const maxPromptLength = 5500
 
 // Reading and writing files:
 async function writeFile(path: string, contents: string): Promise<void> {
   await fs.promises.writeFile(path, contents)
-  console.log(`Wrote ${path}.`)
+  console.log(`Wrote: ${path}`)
 }
 
 type BuildType = "REPOSITORY" | "BRANCH" | "TEMPLATE"
@@ -61,7 +64,9 @@ export class Build {
 
   // Generated values:
   completion?: any
-  gitHistory?: string
+  planCompletion?: any
+  fileList?: string
+  buildPlan?: BuildPlan
 
   // Output parameters:
   buildScript?: string
@@ -93,36 +98,63 @@ export class Build {
 
   }
 
+  // Generate a build script to create a new repository.
   private getCompletion = async (): Promise<Completion | undefined> => {
-    // Generate the build script using ChatGPT.
-
-    if (this.isCopy) {
-      // Don't use ChatGPT if we're generating a repository from a template.
-      return;
-    }
-
-    const cleanHistory = (history: string) => {
-      return history
-        .replace(/[^\x00-\x7F]+/g, "") // Remove non-ASCII characters
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/g, "") // Remove ASCII control characters
-        .slice(-5000)
-    }
-
-    // Prompt to generate the build script.
-    const prompt = (this.isBranch ? changeProjectPrompt : newProjectPrompt)
-      .replace("{DESCRIPTION}", this.userInput)
-      .replace("{REPOSITORY_NAME}", this.suggestedName)
-      .replace("{BASE_IMAGE}", baseImage)
-      .replace("{GIT_HISTORY}", cleanHistory(this.gitHistory ?? ""))
 
     console.log("Calling on the great machine god...")
-    this.completion = await simpleOpenAIRequest(prompt, {
+
+    // Generate a new repository from an empty directory.
+    const prompt = newProjectPrompt
+      .replace("{REPOSITORY_NAME}", this.suggestedName)
+      .replace("{DESCRIPTION}", this.userInput)
+      .replace("{BASE_IMAGE}", baseImage);
+
+    this.completion = await simpleOpenAIRequest(prompt.slice(-maxPromptLength), {
       model: gptModel,
       user: this.collaborator ?? this.creator,
       temperature: temperature
     });
 
-    console.log("Prayers were answered.")
+    console.log("Prayers were answered. (1/1)");
+
+    return this.completion
+  }
+
+  // Generate a plan to modify an existing repository.
+  private getPlanCompletion = async (): Promise<Completion | undefined> => {
+
+    console.log("Generating plan...")
+
+    // Prompt to generate the build script.
+    const prompt = planChangesPrompt
+      .replace("{DESCRIPTION}", this.userInput)
+      .replace("{FILE_LIST}", this.fileList ?? "");
+
+    this.planCompletion = await simpleOpenAIRequest(prompt.slice(-maxPromptLength), {
+      model: gptModel,
+      user: this.collaborator ?? this.creator,
+      temperature: temperature
+    });
+    console.log("Completion received. (1/2)")
+
+    return this.planCompletion;
+  }
+
+  // Generate a build script to modify an existing repository.
+  private getBranchCompletion = async (previewContext: string, fileContentsContext: string): Promise<Completion | undefined> => {
+
+    const fullPrompt = changeProjectPrompt
+      .replace("{DESCRIPTION}", this.userInput)
+      .replace("{FILE_CONTENTS}", fileContentsContext)
+      .replace("{CHANGE_PREVIEW}", previewContext);
+
+    this.completion = await simpleOpenAIRequest(fullPrompt.slice(-maxPromptLength), {
+      model: gptModel,
+      user: this.collaborator ?? this.creator,
+      temperature: temperature
+    });
+
+    console.log("Completion received. (2/2)");
 
     return this.completion
   }
@@ -131,7 +163,7 @@ export class Build {
 
     // Build directory
     const buildDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gitwit-")) + "/"
-    console.log(`Created temporary directory: ${buildDirectory}`)
+    console.log(`Created temporary directory: ${buildDirectory} `)
 
     // Get the name of the source repository as username/reponame.
     const regex = /\/\/github\.com\/([\w-]+)\/([\w-]+)\.git/
@@ -139,18 +171,20 @@ export class Build {
 
     // Intermediate build script.
     const buildScriptPath = buildDirectory + "build.sh"
+    const buildLogPath = buildDirectory + "build.log"
 
     // If we're creating a new repository, call the OpenAI API already.
     if (!this.isBranch && !this.isCopy && !this.completion) {
       await this.getCompletion()
     }
 
-    let repositoryName, branchName;
+    let repositoryName: string | undefined;
+    let branchName;
 
     if (this.isBranch) {
       // Use the provided repository.
       repositoryName = sourceRepositoryName;
-      console.log(`Using repository: ${this.sourceGitURL}`)
+      console.log(`Using repository: ${this.sourceGitURL} `)
 
       // Find an available branch name.
       branchName = await correctBranchName(
@@ -175,6 +209,7 @@ export class Build {
         ...templateOptions
       });
 
+      // Outputs from the new repository.
       this.outputGitURL = newRepository.clone_url
       this.outputHTMLURL = newRepository.html_url
       repositoryName = newRepository.name
@@ -194,7 +229,7 @@ export class Build {
     if (!this.isCopy) {
       // Define the parameters used by the scripts.
       let parameters = {
-        REPO_NAME: repositoryName,
+        REPO_NAME: repositoryName!,
         FULL_REPO_NAME: `${sourceRepositoryUser}/${sourceRepositoryName}`,
         PUSH_URL: this.outputGitURL!,
         REPO_DESCRIPTION: this.userInput!,
@@ -206,7 +241,6 @@ export class Build {
         BRANCH_NAME: branchName ?? "",
         SOURCE_BRANCH_NAME: this.sourceBranch ?? "",
         GITHUB_ACCOUNT: this.creator,
-        GIT_HISTORY: this.gitHistory ?? "",
       }
 
       // Connect to Docker...
@@ -244,12 +278,28 @@ export class Build {
           scripts.CLONE_PROJECT_REPO,
           parameters);
 
-        this.gitHistory = await runScriptInContainer(container,
-          scripts.GET_GIT_HISTORY,
+        // Get a list of files in the repository.
+        this.fileList = await runScriptInContainer(container,
+          scripts.GET_FILE_LIST,
           parameters, true);
 
-        // Now take the git history results and pass it to ChatGPT to get the buid script.
-        await this.getCompletion()
+        // Use ChatGPT to generate a plan.
+        await this.getPlanCompletion()
+        this.buildPlan = new BuildPlan(
+          this.planCompletion.text,
+          this.fileList.trim().split('\n')
+        )
+        console.log(this.buildPlan.items)
+
+        // Get contents of the files to modify.
+        const planContext = this.buildPlan.readableString()
+        const contentsContext = await this.buildPlan.readableContents(
+          async (filePath: string) => {
+            return await readFileFromContainer(container, `/root/${repositoryName}/${filePath}`)
+          })
+
+        // Use ChatGPT to generate the build script.
+        await this.getBranchCompletion(planContext, contentsContext)
       }
 
       // Generate the build script from the OpenAI completion.

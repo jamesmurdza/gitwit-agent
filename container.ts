@@ -2,6 +2,12 @@ import * as path from 'path';
 import * as tar from 'tar';
 import * as Docker from 'dockerode';
 
+const cleanOutput = (textInput: string) => {
+  return textInput
+    .replace(/[^\x00-\x7F]+/g, "") // Remove non-ASCII characters
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/g, "") // Remove ASCII control characters
+}
+
 async function createContainer(docker: Docker, tag: string, environment?: string[]): Promise<Docker.Container> {
   // create a new container from the image
   return await docker.createContainer({
@@ -53,7 +59,7 @@ async function runCommandInContainer(container: Docker.Container, command: strin
   });
   await waitForStreamEnd(stream);
   if (!silent) console.log(output);
-  return output;
+  return cleanOutput(output);
 }
 
 async function runScriptInContainer(container: Docker.Container, script: string, parameters: { [key: string]: string }, silent: boolean = false) {
@@ -70,10 +76,14 @@ async function runScriptInContainer(container: Docker.Container, script: string,
   return result;
 }
 
+async function readFileFromContainer(container: Docker.Container, path: string) {
+  return await runCommandInContainer(container, ["cat", path], true)
+}
+
 async function copyFileToContainer(container: Docker.Container, localFilePath: string, containerFilePath: string) {
   const baseDir = path.dirname(localFilePath);
   const archive = tar.create({ gzip: false, portable: true, cwd: baseDir }, [path.basename(localFilePath)]);
   await container.putArchive(archive, { path: containerFilePath });
 }
 
-export { createContainer, startContainer, runCommandInContainer, runScriptInContainer, copyFileToContainer }
+export { createContainer, startContainer, runCommandInContainer, runScriptInContainer, copyFileToContainer, readFileFromContainer }
