@@ -301,12 +301,14 @@ export class Build {
           scripts.GET_FILE_LIST,
           parameters, true);
 
+
+        // Remove leading "./" from filenames because ChatGPT sometimes removes it.
+        const fixPath = (file: string) => file.replace(/^\.\//, '');
+        const files = this.fileList.trim().split('\n').map(fixPath);
+
         // Use ChatGPT to generate a plan.
         await this.getPlanCompletion()
-        this.buildPlan = new BuildPlan(
-          this.planCompletion.text,
-          this.fileList.trim().split('\n')
-        )
+        this.buildPlan = new BuildPlan(this.planCompletion.text, files)
         console.log(this.buildPlan.items)
 
         // Get contents of the files to modify.
