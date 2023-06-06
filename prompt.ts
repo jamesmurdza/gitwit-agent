@@ -29,6 +29,7 @@ The above are contents of existing files in my project. Help me to modify the re
 {DESCRIPTION}
 
 {CHANGE_PREVIEW}
+- install any dependencies that were added in the above steps
 
 Give me instructions to modify the repository, but use only shell commands. Use as few commands as possible. Use the shortest commands possible. Provide a single /bin/sh script with no extra explanation.
 
