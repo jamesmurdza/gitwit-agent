@@ -125,7 +125,7 @@ export class Build {
 
     console.log("Generating plan...")
 
-    // Prompt to generate the build script.
+    // Prompt to generate the build plan.
     const prompt = planChangesPrompt
       .replace("{DESCRIPTION}", this.userInput)
       .replace("{FILE_LIST}", this.fileList ?? "");
@@ -143,6 +143,7 @@ export class Build {
   // Generate a build script to modify an existing repository.
   private getBranchCompletion = async (previewContext: string, fileContentsContext: string): Promise<Completion | undefined> => {
 
+    // Prompt to generate the build script.
     const fullPrompt = changeProjectPrompt
       .replace("{DESCRIPTION}", this.userInput)
       .replace("{FILE_CONTENTS}", fileContentsContext)
@@ -301,14 +302,12 @@ export class Build {
           scripts.GET_FILE_LIST,
           parameters, true);
 
-
-        // Remove leading "./" from filenames because ChatGPT sometimes removes it.
-        const fixPath = (file: string) => file.replace(/^\.\//, '');
-        const files = this.fileList.trim().split('\n').map(fixPath);
-
         // Use ChatGPT to generate a plan.
         await this.getPlanCompletion()
-        this.buildPlan = new BuildPlan(this.planCompletion.text, files)
+        this.buildPlan = new BuildPlan(
+          this.planCompletion.text,
+          this.fileList.split('\n')
+        )
         console.log(this.buildPlan.items)
 
         // Get contents of the files to modify.

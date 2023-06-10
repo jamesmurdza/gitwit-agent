@@ -12,18 +12,23 @@ export class BuildPlan {
 
   // Parse the output of a ChatGPT request into a BuildPlan object.
   constructor(inputText: string, files: string[]) {
+    // Remove leading "./" from filenames.
+    const fixPath = (file: string) => file.trim().replace(/^\.\//, '');
+    const fixedPaths = files.map(fixPath);
+    console.log(fixedPaths)
     // Convert arrays into objects.
-    const plan = JSON5.parse(inputText)
+    this.items = JSON5.parse(inputText)
       .map(([filePath, action, description]: [string, string, string]) => {
-        return { filePath, action, description }
+        const fixedPath = fixPath(filePath);
+        // Set to edit or new based on if the file exists in the repository.
+        const exists = fixedPaths.includes(fixedPath);
+        return {
+          // Normalize filenames.
+          filePath: fixedPath,
+          action: exists ? "edit" : "add",
+          description
+        }
       });
-    // Set to edit or new based on if the file exists in the repository.
-    this.items = plan.map((item: BuildPlanItem) => {
-      return {
-        ...item,
-        action: files.includes(item.filePath) ? "edit" : "add"
-      }
-    });
     return this;
   }
 
