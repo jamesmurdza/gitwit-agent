@@ -162,12 +162,12 @@ export class Build {
 
   buildAndPush = async ({
     debug = false,
-    onFinished = async ({ }) => { }
+    onStatusUpdate = async ({ }) => { },
   } = {}) => {
 
-    // This will be called when the build is finished.
-    const runFinishedCallback = async () => {
-      await onFinished({
+    // This function pushes a status update to the database.
+    const updateStatus = async ({ finished = false } = {}) => {
+      await onStatusUpdate({
         outputGitURL: this.outputGitURL,
         outputHTMLURL: this.outputHTMLURL,
         buildScript: this.buildScript,
@@ -177,6 +177,7 @@ export class Build {
         planCompletionId: this.planCompletion?.id,
         gptModel: this.completion?.model,
         gitwitVersion: packageInfo.version,
+        finished: finished
       })
     }
 
@@ -246,7 +247,7 @@ export class Build {
     }
 
     if (this.isCopy) {
-      await runFinishedCallback();
+      await updateStatus({ finished: true });
     } else {
       // Define the parameters used by the scripts.
       let parameters = {
@@ -311,6 +312,7 @@ export class Build {
           this.fileList.split('\n')
         )
         console.log(this.buildPlan.items)
+        await updateStatus()
 
         // Get contents of the files to modify.
         const planContext = this.buildPlan.readableString()
@@ -325,6 +327,8 @@ export class Build {
 
       // Generate the build script from the OpenAI completion.
       this.buildScript = applyCorrections(this.completion.text.trim())
+      await updateStatus()
+
       await writeFile(buildScriptPath, this.buildScript)
       await copyFileToContainer(container, buildScriptPath, containerHome)
 
@@ -353,7 +357,7 @@ export class Build {
         scripts.GET_BUILD_LOG,
         parameters, true);
 
-      await runFinishedCallback();
+      await updateStatus({ finished: true });
 
       if (debug) {
         // This is how we can debug the build script interactively.
