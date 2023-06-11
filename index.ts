@@ -172,7 +172,9 @@ export class Build {
         outputHTMLURL: this.outputHTMLURL,
         buildScript: this.buildScript,
         buildLog: this.buildLog,
+        buildPlan: this.planCompletion?.text,
         completionId: this.completion?.id,
+        planCompletionId: this.planCompletion?.id,
         gptModel: this.completion?.model,
         gitwitVersion: packageInfo.version,
       })
