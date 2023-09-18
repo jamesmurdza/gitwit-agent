@@ -58,3 +58,11 @@ Generate a new branch on an existing repository:
 Generate a new branch with the same name and description as the last run:
 
 `npm run start -- --branch --again`
+
+## How it works
+
+<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/c446337b-16bc-43ac-bc5d-483e6d92b048" alt="GitWit Architecture" width="400" />
+<p><em>Overview of the system and its parts</em></p>
+
+<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/800ffd71-27ed-40b2-8667-57ced6db39c6" alt="GitWit Agent" width="550" />
+<p><em>Overview of the agentic process</em></p>
