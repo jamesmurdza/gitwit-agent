@@ -224,7 +224,7 @@ export class Build {
       const newRepository: any = await createGitHubRepo({
         token: process.env.GITHUB_TOKEN!,
         name: this.suggestedName,
-        org: this.organization ?? this.creator,
+        org: this.organization,
         description: this.userInput,
         ...templateOptions
       });
