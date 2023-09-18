@@ -83,7 +83,8 @@ async function createGitHubRepo({ token, name, description, org, template, attem
   // Throw an error if repository creation failed.
   const message = errorMessage(result);
   if (message) {
-    throw new Error(message)
+    console.log(result)
+    throw new Error("Failed to create repository: " + message)
   }
 
   return result;
@@ -111,8 +112,8 @@ async function addGitHubCollaborator(token: string, repoName: string, collaborat
     // Print errors if there are any.
     const message = errorMessage(result);
     if (message) {
-      throw new Error(message)
-      return false;
+      console.log(result);
+      throw new Error("Failed to add collaborator: " + message)
     }
     return result;
   }
@@ -137,7 +138,8 @@ async function getGitHubBranches(token: string, repository: string): Promise<any
     // Print errors if there are any.
     const message = errorMessage(result);
     if (message) {
-      throw new Error(message)
+      console.log(result)
+      throw new Error("Failed to get branches: " + message)
     }
     return <any[]>result;
   }
