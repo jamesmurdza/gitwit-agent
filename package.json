@@ -13,6 +13,7 @@
     "dockerode": "^3.3.5",
     "dotenv": "^16.0.3",
     "fs": "^0.0.1-security",
+    "json5": "^2.2.3",
     "node-fetch": "^2.6.9",
     "openai": "^3.2.1",
     "tar": "^6.1.13"
