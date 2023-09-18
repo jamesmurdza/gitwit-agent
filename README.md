@@ -1,31 +1,39 @@
-# GitWit
+# GitWit Agent
 
-This is the GitWit code generator.
+GitWit is an open-ended code generation agent. Given a GitHub repository and a goal (such as "implement dark mode") it creates a branch with the given changes. It can also create a new repository from scratch. The agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) and has generated over 1000 repositories!
 
+## Quick Start
 
+Before you start:
+1. You need NodeJS (v18) and Docker.
+2. The agent will access to your GitHub account via [personal access token](https://github.com/settings/tokens).
+3. You need an [OpenAI API key](https://platform.openai.com/account/api-keys).
 
-## Setup
+Setup:
+1. `git clone https://github.com/jamesmurdza/gitwit && cd gitwit` to clone this repository.
+2. `cp .env.example .env` to create a .env file. Update **GITHUB_USERNAME**, **GITHUB_TOKEN** and **OPENAI_API_KEY** with your values.
+3. Start Docker! (GitWit creates a temporary Docker container for each run.) The easiest way to do this locally is with Docker Desktop. See here to connect to a remote docker server.
+4. `docker pull node:latest` to download the base Docker image.
+5. `run npm install` to install dependencies.
 
-This project requires NodeJS and Docker to be installed.
+You are ready to go!
 
-To install dependencies run `npm install`.
+## Usage
 
-Before running, copy .env.example to .env and add missing information.
-
-## Examples
-
-<details>
-  <summary>Example 1: New repository 📼</summary>
+The agent has two modes:
+- Create new **repository**: Given a prompt and a repository name, spawn the repository<details>
+  <summary>Example</summary>
 
   https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/55537249-c301-4e13-84e5-0cdb06174071
 </details>
-<details>
-  <summary>Example 2: New branch 📼</summary>
+
+- Create new **branch**: Given a prompt, an existing repository and a branch name, spawn the new branch<details>
+  <summary>Example</summary>
 
   https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/9315a17c-fc72-431a-a648-16ba42938faa
 </details>
 
-## Usage
+### Commands
 
 Generate a new GitHub repository:
 
