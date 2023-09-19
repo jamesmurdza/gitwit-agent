@@ -27,17 +27,13 @@ You are ready to go!
 ## Usage
 
 The agent has two modes:
-- Create new **repository**: Given a prompt and a repository name, spawn the repository<details>
-  <summary>Example</summary>
-
+- Create new **repository**: Given a prompt and a repository name, spawn the repository
+  
   https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/55537249-c301-4e13-84e5-0cdb06174071
-</details>
 
-- Create new **branch**: Given a prompt, an existing repository and a branch name, spawn the new branch<details>
-  <summary>Example</summary>
+- Create new **branch**: Given a prompt, an existing repository and a branch name, spawn the new branch
 
   https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/9315a17c-fc72-431a-a648-16ba42938faa
-</details>
 
 ### Commands
 
