@@ -26,6 +26,8 @@ You are ready to go!
 
 ## Usage
 
+Skip to [commands](#commands).
+
 The agent has two modes:
 - Create new **repository**: Given a prompt and a repository name, spawn the repository
   
