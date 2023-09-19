@@ -1,5 +1,5 @@
 # GitWit Agent
-<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/9d8d39b4-9471-4a87-8434-ac794dfd86fb" align="right" width="500" />
+<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/2a0e4f6c-79e9-4ef0-9645-a50de5dcb6bf" align="right" width="500" />
 
 GitWit is a container-based agent specialized in making useful commits to git repositories. Given a description such as "implement dark mode" it either creates a repository or a branch on an existing repository (as requested) to make this feature.
 
