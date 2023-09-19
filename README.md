@@ -7,6 +7,12 @@ Given there exist [a few agents](https://github.com/jamesmurdza/awesome-ai-devto
 
 This agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) and has generated over 1000 repositories!
 
+### Contents
+- [How to run it](#how-to-run-it)
+- [Demos](#demos)
+- [Commands](#commands)
+- [How it works](#how-it-works)
+
 ## How to run it
 
 Before you start:
@@ -27,6 +33,8 @@ You are ready to go!
 ## Usage
 
 Skip to [commands](#commands).
+
+### Demos
 
 The agent has two modes:
 - Create new **repository**: Given a prompt and a repository name, spawn the repository
