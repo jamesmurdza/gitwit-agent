@@ -1,13 +1,19 @@
 # GitWit Agent
+<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/9d8d39b4-9471-4a87-8434-ac794dfd86fb" align="right" width="500" />
 
-GitWit is an open-ended code generation agent. Given a GitHub repository and a goal (such as "implement dark mode") it creates a branch with the given changes. It can also create a new repository from scratch. The agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) and has generated over 1000 repositories!
+GitWit is a container-based agent specialized in making useful commits to git repositories. Given a description such as "implement dark mode" it either creates a repository or a branch on an existing repository (as requested) to make this feature.
 
-## Quick Start
+Given there exist [a few agents](https://github.com/jamesmurdza/awesome-ai-devtools#pr-agents) with a similar purpose—**why is GitWit different?** GitWit interacts with the filesystem via shell and thus can run any command. It _writes code that writes code_. This makes it very flexible and repurposable for a number of interesting use cases.
+
+This agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) and has generated over 1000 repositories!
+
+## How to run it
 
 Before you start:
-1. You need NodeJS (v18) and Docker.
-2. The agent will access to your GitHub account via [personal access token](https://github.com/settings/tokens).
-3. You need an [OpenAI API key](https://platform.openai.com/account/api-keys).
+1. You need NodeJS (v18).
+2. You need Docker.
+3. The agent will access to your GitHub account via [personal access token](https://github.com/settings/tokens).
+4. You need an [OpenAI API key](https://platform.openai.com/account/api-keys).
 
 Setup:
 1. `git clone https://github.com/jamesmurdza/gitwit && cd gitwit` to clone this repository.
