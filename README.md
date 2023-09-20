@@ -103,7 +103,7 @@ Generate a new branch with the same name and description as the last run:
   <tr>
     <td valign="top">
       <p>
-        This diagram shows a sequential breakdown of the steps in index.ts. A user prompt is used to generate a plan, which is then used to generate a shell script which is run in the container.
+        This diagram shows a sequential breakdown of the steps in <a href="index.ts">index.ts</a>. A user prompt is used to generate a plan, which is then used to generate a shell script which is run in the container.
       </p>
       <p>
         Note: This diagram is for the "branch creation" mode. The equivalent diagram for "repository generation" mode would have "Create a new repo" for Step 1, and Step 2 would be removed. That's because the main purpose of the plan is to selectively decide which files to inject in the context of the final LLM call.
