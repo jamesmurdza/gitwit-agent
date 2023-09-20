@@ -11,6 +11,7 @@ This agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) 
 - [How to run it](#how-to-run-it)
 - [Demos](#demos)
 - [Commands](#commands)
+- [Examples](#examples)
 - [How it works](#how-it-works)
 
 ## How to run it
@@ -70,6 +71,14 @@ Generate a new branch on an existing repository:
 Generate a new branch with the same name and description as the last run:
 
 `npm run start -- --branch --again`
+
+## Examples
+
+Examples of entire repositories generated with GitWit:
+
+- [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo)
+- [gitwitapp/doodle-app](https://github.com/gitwitapp/doodle-app)
+- [gitwitapp/python-script-that-searches-twitter-for](https://github.com/gitwitapp/python-script-that-searches-twitter-for)
 
 ## How it works
 
