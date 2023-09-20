@@ -73,8 +73,48 @@ Generate a new branch with the same name and description as the last run:
 
 ## How it works
 
-<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/c446337b-16bc-43ac-bc5d-483e6d92b048" alt="GitWit Architecture" width="400" />
+<table>
+  <tr>
+    <td valign="top" width="50%">
+      <p>
+        This shows the various APIs and connections in the program.
+      </p>
+      <p>
+        <strong>Code generator</strong>: <a href="index.ts">(index.ts)</a> This is the central component that contains the logic necessary to create a new repository or branch.
+      </p>
+      <p>
+        <strong>OpenAI API</strong>: <a href="openai.ts">(openai.ts)</a> This is a wrapper functions I wrote around the OpenAI chat completion API.
+      </p>
+      <p>
+        <strong>GitHub API</strong>: <a href="github.ts">(github.ts)</a> This is a collection of wrapper functions I wrote around the GitHub API.
+      </p>
+      <p>
+        <strong>Docker/Container</strong>: <a href="container.ts">(container.ts)</a> This is a collection of wrapper functions I wrote around dockerode to simplify interacting with a Docker server
+      </p>
+      <p>
+        <strong>Git Repository</strong>: <a href="scripts.ts">(scripts.ts)</a> This is a collection of shell scripts that are injected into the container in order to perform basic git operations.
+      </p>
+    </td>
+    <td>
+      <img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/c446337b-16bc-43ac-bc5d-483e6d92b048" alt="GitWit Architecture" width="100%" />
 <p><em>Overview of the system and its parts</em></p>
-
-<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/800ffd71-27ed-40b2-8667-57ced6db39c6" alt="GitWit Agent" width="550" />
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <p>
+        This diagram shows a sequential breakdown of the steps in index.ts. A user prompt is used to generate a plan, which is then used to generate a shell script which is run in the container.
+      </p>
+      <p>
+        Note: This diagram is for the "branch creation" mode. The equivalent diagram for "repository generation" mode would have "Create a new repo" for Step 1, and Step 2 would be removed. That's because the main purpose of the plan is to selectively decide which files to inject in the context of the final LLM call.
+      </p>
+      <p>
+        We select entire files that should or should not be included in the context of the final LLM call, a simple implementation of retrieval-augmented generation!
+      </p>
+    </td>
+    <td>
+      <img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/800ffd71-27ed-40b2-8667-57ced6db39c6" alt="GitWit Agent" width="100%" />
 <p><em>Overview of the agentic process</em></p>
+    </td>
+  </tr>
+</table>
