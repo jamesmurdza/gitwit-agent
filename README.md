@@ -1,5 +1,5 @@
 # GitWit Agent
-<img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/2a0e4f6c-79e9-4ef0-9645-a50de5dcb6bf" align="right" width="500" />
+<img src="https://gitwitdev.github.io/images/gitwit-agent-overview.png" align="right" width="500" />
 
 GitWit is a container-based agent specialized in making useful commits to git repositories. Given a description such as "implement dark mode" it either creates a repository or a branch on an existing repository (as requested) to make this feature.
 
@@ -96,7 +96,7 @@ Generate a new branch with the same name and description as the last run:
       </p>
     </td>
     <td>
-      <img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/c446337b-16bc-43ac-bc5d-483e6d92b048" alt="GitWit Architecture" width="100%" />
+      <img src="https://gitwitdev.github.io/images/gitwit-agent-architecture.png" alt="GitWit Architecture" width="100%" />
 <p><em>Overview of the system and its parts</em></p>
     </td>
   </tr>
@@ -113,7 +113,7 @@ Generate a new branch with the same name and description as the last run:
       </p>
     </td>
     <td>
-      <img src="https://github.com/jamesmurdza/gitwit-agent/assets/33395784/800ffd71-27ed-40b2-8667-57ced6db39c6" alt="GitWit Agent" width="100%" />
+      <img src="https://gitwitdev.github.io/images/gitwit-agent-algorithm.png" alt="GitWit Agent" width="100%" />
 <p><em>Overview of the agentic process</em></p>
     </td>
   </tr>
