@@ -1,4 +1,5 @@
-import { Configuration, OpenAIApi } from 'openai'
+import { ChatOpenAI } from "langchain/chat_models/openai";
+import { HumanMessage } from "langchain/schema";
 
 // OpenAI API:
 
@@ -16,32 +17,26 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
     },
   };
 
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-    basePath: process.env.OPENAI_BASE_URL,
-    baseOptions: baseOptions,
-  })
-  const openai = new OpenAIApi(configuration)
+  const chat = new ChatOpenAI(
+    {
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      ...config
+    },
+    {
+      basePath: process.env.OPENAI_BASE_URL,
+      baseOptions: baseOptions,
+    }
+  );
 
   try {
-    const completion = await openai.createChatCompletion({
-      ...config,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    })
-    // When the API returns an error:
-    const data: any = completion.data;
-    if (data.error) {
-      throw new Error(`OpenAI error: (${data.error.type}) ${data.error.message}`)
-    }
+    const result = await chat.generate([
+      [new HumanMessage(prompt)]
+    ]);
+
     return {
-      text: completion.data.choices[0]!.message!.content,
-      id: completion.data.id,
-      model: completion.data.model
+      text: result.generations[0][0].text,
+      id: "", // This is currently unsupported by Langchain.
+      model: result.llmOutput?.modelName || ""
     };
   } catch (error: any) {
     // When any other error occurs:

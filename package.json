@@ -14,6 +14,7 @@
     "dotenv": "^16.0.3",
     "fs": "^0.0.1-security",
     "json5": "^2.2.3",
+    "langchain": "^0.0.152",
     "node-fetch": "^2.6.9",
     "openai": "^3.2.1",
     "tar": "^6.1.13"
