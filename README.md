@@ -1,9 +1,9 @@
 # GitWit Agent
 <img src="https://gitwitdev.github.io/images/gitwit-agent-overview.png" align="right" width="500" />
 
-GitWit is a container-based agent specialized in making useful commits to git repositories. Given a description such as "implement dark mode" it either creates a repository or a branch on an existing repository (as requested) to make this feature.
+GitWit is a container-based agent specialized in making useful commits to git repositories. Given a description (i.e. "implement dark mode") it either checks out a repository or creates a new one, makes these changes, and then pushes the changes to master. (Skip to [How it works](#how-it-works).)
 
-Given there exist [a few agents](https://github.com/jamesmurdza/awesome-ai-devtools#pr-agents) with a similar purpose—**why is GitWit different?** GitWit interacts with the filesystem via shell and thus can run any command. It _writes code that writes code_. This makes it very flexible and repurposable for a number of interesting use cases.
+Given there exist [a few agents](https://github.com/jamesmurdza/awesome-ai-devtools#pr-agents) with a similar purpose—**why is GitWit different?** GitWit interacts with the filesystem in a temporary sandbox and thus can run any shell command. It _writes code that writes code_. This makes it very flexible and repurposable for a number of interesting use cases.
 
 This agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) and has generated over 1000 repositories!
 
