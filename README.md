@@ -74,10 +74,14 @@ Generate a new branch with the same name and description as the last run:
 
 ## Examples
 
+Articles and tutorials:
+
+- [Building a Chrome Extension from Scratch using GitWit](https://codesphere.com/articles/building-a-chrome-extension-using-gitwit)
+
 Examples of entire repositories generated with GitWit:
 
-- [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo)
 - [gitwitapp/doodle-app](https://github.com/gitwitapp/doodle-app)
+- [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo)
 - [gitwitapp/python-script-that-searches-twitter-for](https://github.com/gitwitapp/python-script-that-searches-twitter-for)
 
 ## How it works
