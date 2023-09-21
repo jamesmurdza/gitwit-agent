@@ -105,7 +105,7 @@ async function addGitHubCollaborator(token: string, repoName: string, collaborat
   };
 
   const response = await fetch(`https://api.github.com/repos/${repoName}/collaborators/${collaborator}`, requestOptions);
-  if (response.status === 204) {
+  if (response.status === 204) { // TODO Does this work? Stumbled in the past upon systems that were returning simply a 200 for creation, instead of 204. Myabe better to check for general success of 2xx?
     return true;
   } else {
     const result = await response.json();
