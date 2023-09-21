@@ -81,8 +81,12 @@ Articles and tutorials:
 Examples of entire repositories generated with GitWit:
 
 - [gitwitapp/doodle-app](https://github.com/gitwitapp/doodle-app)
+- [gitwitapp/cached-http-proxy-server](https://github.com/gitwitapp/cached-http-proxy-server)
+- [gitwitapp/reddit-news-viewer](https://github.com/gitwitapp/reddit-news-viewer)
+- [gitwitapp/python-discord-chatbot](https://github.com/gitwitapp/python-discord-chatbot)
+- [gitwitapp/live-BTC-ticker](https://github.com/gitwitapp/live-BTC-ticker)
+- [gitwitapp/web-calculator](https://github.com/gitwitapp/web-calculator)
 - [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo)
-- [gitwitapp/python-script-that-searches-twitter-for](https://github.com/gitwitapp/python-script-that-searches-twitter-for)
 
 ## How it works
 
