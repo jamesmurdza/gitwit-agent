@@ -80,13 +80,13 @@ Articles and tutorials:
 
 Examples of entire repositories generated with GitWit:
 
-- [gitwitapp/doodle-app](https://github.com/gitwitapp/doodle-app)
-- [gitwitapp/cached-http-proxy-server](https://github.com/gitwitapp/cached-http-proxy-server)
-- [gitwitapp/reddit-news-viewer](https://github.com/gitwitapp/reddit-news-viewer)
-- [gitwitapp/python-discord-chatbot](https://github.com/gitwitapp/python-discord-chatbot)
-- [gitwitapp/live-BTC-ticker](https://github.com/gitwitapp/live-BTC-ticker)
-- [gitwitapp/web-calculator](https://github.com/gitwitapp/web-calculator)
-- [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo)
+- [gitwitapp/doodle-app](https://github.com/gitwitapp/doodle-app): HTML/JS drawing app.
+- [gitwitapp/cached-http-proxy-server](https://github.com/gitwitapp/cached-http-proxy-server): NodeJS proxy server with caching.
+- [gitwitapp/reddit-news-viewer](https://github.com/gitwitapp/reddit-news-viewer): Python script for scraping Reddit headlines.
+- [gitwitapp/python-discord-chatbot](https://github.com/gitwitapp/python-discord-chatbot): Simple Discord bot written in Python.
+- [gitwitapp/live-BTC-ticker](https://github.com/gitwitapp/live-BTC-ticker): ReactJS app using d3.js to chart BTC prices.
+- [gitwitapp/web-calculator](https://github.com/gitwitapp/web-calculator): Simple HTML/JS calculator.
+- [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo): Example of generated unit tests.
 
 ## How it works
 
