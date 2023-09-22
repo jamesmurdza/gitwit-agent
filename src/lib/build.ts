@@ -2,7 +2,7 @@ import * as fs from "fs"
 import * as path from "path"
 import * as os from "os"
 import Docker from 'dockerode'
-import packageInfo from '../package.json';
+import packageInfo from '../../package.json';
 
 import {
     createContainer,
@@ -11,19 +11,15 @@ import {
     runScriptInContainer,
     copyFileToContainer,
     readFileFromContainer
-} from "../container"
-import { simpleOpenAIRequest, Completion } from "../openai"
-import { applyCorrections } from "../corrections"
-import { newProjectPrompt, changeProjectPrompt, planChangesPrompt } from "../prompt"
-import { createGitHubRepo, addGitHubCollaborator, correctBranchName } from "../github"
-import * as scripts from "../scripts"
-import { BuildPlan } from "../buildPlan"
+} from "../helpers/container"
+import { simpleOpenAIRequest, Completion } from "../helpers/openai"
+import { applyCorrections } from "../helpers/corrections"
+import { newProjectPrompt, changeProjectPrompt, planChangesPrompt } from "../../prompt"
+import { createGitHubRepo, addGitHubCollaborator, correctBranchName } from "../helpers/github"
+import * as scripts from "../../scripts"
+import { BuildPlan } from "./buildPlan"
 
 const { exec } = require('child_process');
-
-// TODO remove these as now env gets initialised on index.ts
-import * as dotenv from "dotenv"
-dotenv.config()
 
 // Container constants:
 const baseImage = "node:latest"
@@ -198,7 +194,7 @@ export class Build {
 
         // This function pushes a status update to the database.
         const updateStatus = async ({ finished = false } = {}) => {
-        await onStatusUpdate({ // TODO understand the purpose of this.
+        await onStatusUpdate({
             outputGitURL: this.outputGitURL,
             outputHTMLURL: this.outputHTMLURL,
             buildScript: this.buildScript,

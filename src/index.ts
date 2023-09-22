@@ -1,4 +1,4 @@
-import { cli } from "./cli";
+import { cli } from "./helpers/cli";
 import * as dotenv from "dotenv"
 
 dotenv.config();
