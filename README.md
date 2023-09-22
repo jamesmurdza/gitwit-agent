@@ -1,4 +1,5 @@
 # GitWit Agent
+<img src="https://gitwitdev.github.io/gifs/new-repo.gif" align="right" width="500" />
 <img src="https://gitwitdev.github.io/images/gitwit-agent-overview.png" align="right" width="500" />
 
 GitWit is a container-based agent specialized in making useful commits to git repositories. Given a description (i.e. "implement dark mode") it either checks out a repository or creates a new one, makes these changes, and then pushes the changes to master. (Skip to [How it works](#how-it-works).)
@@ -9,11 +10,11 @@ This agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) 
 
 ### Contents
 - [How to run it](#how-to-run-it)
-- [Demos](#demos)
 - [Commands](#commands)
+- [Examples](#examples)
+- [Demos](#demos)
 - [Additional configuration](#additional-configuration)
 - [LLM configuration](#llm-configuration)
-- [Examples](#examples)
 - [How it works](#how-it-works)
 
 ## How to run it
@@ -33,22 +34,7 @@ Setup:
 
 You are ready to go!
 
-## Usage
-
-Skip to [commands](#commands).
-
-### Demos
-
-The agent has two modes:
-- Create new **repository**: Given a prompt and a repository name, spawn the repository
-  
-  https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/55537249-c301-4e13-84e5-0cdb06174071
-
-- Create new **branch**: Given a prompt, an existing repository and a branch name, spawn the new branch
-
-  https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/9315a17c-fc72-431a-a648-16ba42938faa
-
-### Commands
+## Commands
 
 Generate a new GitHub repository:
 
@@ -73,6 +59,33 @@ Generate a new branch on an existing repository:
 Generate a new branch with the same name and description as the last run:
 
 `npm run start -- --branch --again`
+
+## Examples
+
+Articles and tutorials:
+
+- [Building a Chrome Extension from Scratch using GitWit](https://codesphere.com/articles/building-a-chrome-extension-using-gitwit)
+
+Examples of entire repositories generated with GitWit:
+
+- [gitwitapp/doodle-app](https://github.com/gitwitapp/doodle-app): HTML/JS drawing app.
+- [gitwitapp/cached-http-proxy-server](https://github.com/gitwitapp/cached-http-proxy-server): NodeJS proxy server with caching.
+- [gitwitapp/reddit-news-viewer](https://github.com/gitwitapp/reddit-news-viewer): Python script for scraping Reddit headlines.
+- [gitwitapp/python-discord-chatbot](https://github.com/gitwitapp/python-discord-chatbot): Simple Discord bot written in Python.
+- [gitwitapp/live-BTC-ticker](https://github.com/gitwitapp/live-BTC-ticker): ReactJS app using d3.js to chart BTC prices.
+- [gitwitapp/web-calculator](https://github.com/gitwitapp/web-calculator): Simple HTML/JS calculator.
+- [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo): Example of generated unit tests.
+
+## Demos
+
+The agent has two modes:
+- Create new **repository**: Given a prompt and a repository name, spawn the repository
+  
+  https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/55537249-c301-4e13-84e5-0cdb06174071
+
+- Create new **branch**: Given a prompt, an existing repository and a branch name, spawn the new branch
+
+  https://github.com/gitwitdev/gitwitdev.github.io/assets/33395784/9315a17c-fc72-431a-a648-16ba42938faa
 
 ## Additional configuration
 
@@ -104,22 +117,6 @@ HELICONE_API_KEY=sk-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 By default, GitWit Agent is set to use the OpenAI API with gpt-3.5-turbo and a temperature setting of 0.2. These settings can be configured in [index.js](https://github.com/jamesmurdza/gitwit-agent/blob/main/index.ts).
 
 GitWit can also be used with LangChain to compose any LangChain supported [chat model](https://js.langchain.com/docs/modules/model_io/models/chat/). An example of this is in [llm.js](https://github.com/jamesmurdza/gitwit-agent/blob/langchain/llm.ts) on the [langchain](https://github.com/jamesmurdza/gitwit-agent/tree/langchain) branch.
-
-## Examples
-
-Articles and tutorials:
-
-- [Building a Chrome Extension from Scratch using GitWit](https://codesphere.com/articles/building-a-chrome-extension-using-gitwit)
-
-Examples of entire repositories generated with GitWit:
-
-- [gitwitapp/doodle-app](https://github.com/gitwitapp/doodle-app): HTML/JS drawing app.
-- [gitwitapp/cached-http-proxy-server](https://github.com/gitwitapp/cached-http-proxy-server): NodeJS proxy server with caching.
-- [gitwitapp/reddit-news-viewer](https://github.com/gitwitapp/reddit-news-viewer): Python script for scraping Reddit headlines.
-- [gitwitapp/python-discord-chatbot](https://github.com/gitwitapp/python-discord-chatbot): Simple Discord bot written in Python.
-- [gitwitapp/live-BTC-ticker](https://github.com/gitwitapp/live-BTC-ticker): ReactJS app using d3.js to chart BTC prices.
-- [gitwitapp/web-calculator](https://github.com/gitwitapp/web-calculator): Simple HTML/JS calculator.
-- [gitwitapp/customer-oop-demo](https://github.com/gitwitapp/customer-oop-demo): Example of generated unit tests.
 
 ## How it works
 
