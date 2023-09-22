@@ -7,7 +7,7 @@ function applyCorrections(buildScript: string) {
   // Detect commands like: echo -e '...' > ...
   const echoRedirectionSingleQuote = /^((?<COMMAND>echo -e '(?:\\.|[^\\'])*') > (?<DIRECTORY>.*\/).*)$/mg;
 
-  // What a hack! But small corrections like this will necessary for a while.
+  // These small corrections are necessary as they take into account the random characters created by terminal.
   return buildScript.replace(/^npx /mg, 'npx --yes ')
     .replace(/(^\`\`\`[a-z]*\n|\n\`\`\`$)/g, '')
     .replace(/^echo( -e)? /mg, 'echo -e ')

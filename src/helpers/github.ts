@@ -68,9 +68,10 @@ async function createGitHubRepo({ token, name, description, org, template, attem
     result = await response.json() ?? {};
 
     // If the repo already exists, add a number to the end of the name.
-    const alreadyExists = (errors: any) => errors
+    const alreadyExists = (errors: Record<string, any>[]): boolean => errors
       && errors[0].field === "name" // When creating a new repository.
       || errors[0].includes("already exists") // When generating from a template.
+
     if (result.errors && alreadyExists(result.errors)) {
       console.log(`Repository name already exists. Trying ${currentName}.`)
       failedAttempts++
@@ -105,7 +106,7 @@ async function addGitHubCollaborator(token: string, repoName: string, collaborat
   };
 
   const response = await fetch(`https://api.github.com/repos/${repoName}/collaborators/${collaborator}`, requestOptions);
-  if (response.status === 204) {
+  if (response.status >= 200 && response.status < 300) {
     return true;
   } else {
     const result = await response.json();
@@ -120,8 +121,6 @@ async function addGitHubCollaborator(token: string, repoName: string, collaborat
 }
 
 async function getGitHubBranches(token: string, repository: string): Promise<any[]> {
-  // Add collaborator to the repo.
-  // Note: Repo name is in the format of "org/repo".
   const requestOptions = {
     method: 'GET',
     headers: {
@@ -148,7 +147,7 @@ async function getGitHubBranches(token: string, repository: string): Promise<any
 async function correctBranchName(token: string, sourceRepository: string, branchName: string) {
   const branches = await getGitHubBranches(process.env.GITHUB_TOKEN!, sourceRepository)
   const branchNames = branches.map((branch) => branch.name)
-  var correctedName = branchName
+  let correctedName = branchName
   while (branchNames.includes(correctedName)) {
     correctedName = incrementName(correctedName)
   }

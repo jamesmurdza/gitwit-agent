@@ -1,6 +1,6 @@
 import * as readline from "readline"
 import * as fs from "fs"
-import { Build } from "./index"
+import { Build } from "../lib/build"
 import { writeFile, readFile } from "fs/promises"
 
 function askQuestion(query: string): Promise<string> {
@@ -17,7 +17,7 @@ function askQuestion(query: string): Promise<string> {
   )
 }
 
-(async () => {
+export async function cli(): Promise<void> {
   if (!fs.existsSync("./build")) {
     fs.mkdirSync("./build")
   }
@@ -47,13 +47,13 @@ function askQuestion(query: string): Promise<string> {
     await writeFile("./build/info.json", JSON.stringify({ userInput, suggestedName, sourceGitURL }))
   }
 
-  let project = new Build({
+  let project = await Build.create({
     buildType: branch ? "BRANCH" : "REPOSITORY",
     suggestedName,
     userInput,
     creator: process.env.GITHUB_USERNAME!,
     sourceGitURL
-  })
+  });
 
   if (offline) {
     const completionFile = await readFile("./build/completion.json");
@@ -69,7 +69,4 @@ function askQuestion(query: string): Promise<string> {
     let { text } = project.completion
     await writeFile("./build/completion.json", text!)
   }
-})().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+}

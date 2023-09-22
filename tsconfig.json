@@ -10,5 +10,5 @@
     "types": ["node"],
     "resolveJsonModule": true
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "src/lib/buildPlan.ts", "src/helpers/cli.ts", "src/helpers/container.ts", "src/helpers/corrections.ts", "src/helpers/github.ts", "src/helpers/openai.ts", "src/index.ts"]
 }
