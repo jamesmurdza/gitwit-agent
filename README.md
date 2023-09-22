@@ -80,21 +80,22 @@ To add new repositories to a GitHub organization:
 GITHUB_ORGNAME=mygithuborg
 ```
 
-To enable logging or caching with Helicone:
-```sh
-# Required:
-HELICONE_API_KEY=sk-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
-# Optional:
-# OPENAI_CACHE_ENABLED=true
-```
-
-Using a remote Docker server:
+To use a remote Docker server:
 ```sh
 DOCKER_API_HOST=1.2.3.4
 DOCKER_API_PORT=2375
 DOCKER_API_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
 DOCKER_API_CA=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
 DOCKER_API_CERT=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
+```
+
+To enable logging or caching with Helicone:
+```sh
+# Required:
+OPENAI_BASE_URL=https://oai.hconeai.com/v1
+HELICONE_API_KEY=sk-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
+# Optional:
+# OPENAI_CACHE_ENABLED=true
 ```
 
 ## Examples
