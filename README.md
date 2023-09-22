@@ -12,6 +12,7 @@ This agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) 
 - [Demos](#demos)
 - [Commands](#commands)
 - [Additional configuration](#additional-configuration)
+- [LLM configuration](#llm-configuration)
 - [Examples](#examples)
 - [How it works](#how-it-works)
 
@@ -97,6 +98,12 @@ HELICONE_API_KEY=sk-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 # Optional:
 # OPENAI_CACHE_ENABLED=true
 ```
+
+## LLM configuration
+
+By default, GitWit Agent is set to use the OpenAI API with gpt-3.5-turbo and a temperature setting of 0.2. These settings can be configured in [index.js](https://github.com/jamesmurdza/gitwit-agent/blob/main/index.ts).
+
+GitWit can also be used with LangChain to compose any LangChain supported [chat model](https://js.langchain.com/docs/modules/model_io/models/chat/). An example of this is in [llm.js](https://github.com/jamesmurdza/gitwit-agent/blob/langchain/llm.ts) on the [langchain](https://github.com/jamesmurdza/gitwit-agent/tree/langchain) branch.
 
 ## Examples
 
