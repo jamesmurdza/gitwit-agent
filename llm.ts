@@ -1,11 +1,11 @@
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { HumanMessage } from "langchain/schema";
 
-// OpenAI API:
+// LLM API:
 
 export type Completion = { text: string; id: string; model: string } | { error: string };
 
-async function simpleOpenAIRequest(prompt: string, config: any): Promise<Completion> {
+async function llmRequest(prompt: string, config: any): Promise<Completion> {
 
   const baseOptions = {
     headers: {
@@ -44,4 +44,4 @@ async function simpleOpenAIRequest(prompt: string, config: any): Promise<Complet
   }
 }
 
-export { simpleOpenAIRequest }
+export { llmRequest }

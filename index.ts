@@ -13,7 +13,7 @@ import {
   copyFileToContainer,
   readFileFromContainer
 } from "./container"
-import { simpleOpenAIRequest, Completion } from "./openai"
+import { llmRequest, Completion } from "./llm"
 import { applyCorrections } from "./corrections"
 import { newProjectPrompt, changeProjectPrompt, planChangesPrompt } from "./prompt"
 import { createGitHubRepo, addGitHubCollaborator, correctBranchName } from "./github"
@@ -109,7 +109,7 @@ export class Build {
       .replace("{DESCRIPTION}", this.userInput)
       .replace("{BASE_IMAGE}", baseImage);
 
-    this.completion = await simpleOpenAIRequest(prompt.slice(-maxPromptLength), {
+    this.completion = await llmRequest(prompt.slice(-maxPromptLength), {
       model: gptModel,
       user: this.collaborator ?? this.creator,
       temperature: temperature
@@ -130,7 +130,7 @@ export class Build {
       .replace("{DESCRIPTION}", this.userInput)
       .replace("{FILE_LIST}", this.fileList ?? "");
 
-    this.planCompletion = await simpleOpenAIRequest(prompt.slice(-maxPromptLength), {
+    this.planCompletion = await llmRequest(prompt.slice(-maxPromptLength), {
       model: gptModel,
       user: this.collaborator ?? this.creator,
       temperature: temperature
@@ -149,7 +149,7 @@ export class Build {
       .replace("{FILE_CONTENTS}", fileContentsContext)
       .replace("{CHANGE_PREVIEW}", previewContext);
 
-    this.completion = await simpleOpenAIRequest(fullPrompt.slice(-maxPromptLength), {
+    this.completion = await llmRequest(fullPrompt.slice(-maxPromptLength), {
       model: gptModel,
       user: this.collaborator ?? this.creator,
       temperature: temperature
