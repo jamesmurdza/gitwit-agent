@@ -11,6 +11,7 @@ This agent is also live for testing at [app.gitwit.dev](https://app.gitwit.dev) 
 - [How to run it](#how-to-run-it)
 - [Demos](#demos)
 - [Commands](#commands)
+- [Additional configuration](#additional-configuration)
 - [Examples](#examples)
 - [How it works](#how-it-works)
 
@@ -71,6 +72,30 @@ Generate a new branch on an existing repository:
 Generate a new branch with the same name and description as the last run:
 
 `npm run start -- --branch --again`
+
+## Additional configuration
+
+To add new repositories to a GitHub organization:
+```sh
+GITHUB_ORGNAME=mygithuborg
+```
+
+To enable logging or caching with Helicone:
+```sh
+# Required:
+HELICONE_API_KEY=sk-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
+# Optional:
+# OPENAI_CACHE_ENABLED=true
+```
+
+Using a remote Docker server:
+```sh
+DOCKER_API_HOST=1.2.3.4
+DOCKER_API_PORT=2375
+DOCKER_API_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
+DOCKER_API_CA=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
+DOCKER_API_CERT=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
+```
 
 ## Examples
 
